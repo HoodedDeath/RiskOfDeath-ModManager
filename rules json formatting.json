@@ -1,0 +1,65 @@
+general rules file:
+{
+	"<UUID>": {
+		"<modFolder>":"<destinationFolder>",
+      	"<modFolder>":"<destinationFolder>",
+      	"<modFolder>":"<destinationFolder>"
+	},
+	"<UUID>": {
+		"<modFolder>":"<destinationFolder>",
+      	"<modFolder>":"<destinationFolder>",
+      	"<modFolder>":"<destinationFolder>"
+	}
+}
+-
+Dictionary<string, Dictionary<string, string>> rules = <Deserialize>
+//
+[
+  {
+    "Rule": {
+      "Name": "x",
+      "ApplicableUUIDs": [
+      	"c",
+      	"b",
+      	"a"
+      ],
+      "FolderRules": {
+      	"<modFolder>":"<destinationFolder>",
+      	"<modFolder>":"<destinationFolder>",
+      	"<modFolder>":"<destinationFolder>"
+      }
+    }
+  },
+  {
+    "Rule": {
+      "Name": "y",
+      "ApplicableUUIDs": [
+      	"d",
+      	"e",
+      	"f"
+      ],
+      "FolderRules": {
+      	"<modFolder>":"<destinationFolder>",
+      	"<modFolder>":"<destinationFolder>",
+      	"<modFolder>":"<destinationFolder>"
+      }
+    }
+  }
+]
+-
+List<Rule> rules = <Deserialize>
+class Rule {
+	string Name;
+	List<string> ApplicableUUIDs;
+	Dictionary<string, string> FolderRules;
+}
+//
+
+Per-game (in mod directory)
+{
+	"<modFolder>":"<destinationFolder>",
+	"<modFolder>":"<destinationFolder>",
+	"<modFolder>":"<destinationFolder>"
+}
+-
+Dictionary<string, string> perGameRules = <Deserialze>
