@@ -39,3 +39,4 @@ When you click the "For Mod Devs" button, it will open a form that starts with t
 
 # Changlog
 - 1.0.0 -> Initial release
+- 1.0.1 -> Update RuleSet to not try installing itself to RoR2

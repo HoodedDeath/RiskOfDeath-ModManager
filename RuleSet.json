@@ -1,0 +1,81 @@
+{
+  "special": [
+    {
+      "name": "OrangeNote-Twitch",
+      "uuids": [
+        "6d9467c5-33f7-4571-bd48-8c57899c4a89",
+        "c337513a-05f6-4921-8b96-4c5aaff66507"
+      ],
+      "pick_one_of_x": false,
+      "pick_options": {},
+      "folders": {
+        "dependencies": "Managed",
+        "TwitchIntegration": "plugins\\TwitchIntegration"
+      },
+      "files": {
+        "TwitchVotesItems.dll": "plugins\\TwitchIntegration"
+      }
+    },
+    {
+      "name": "BepInEx",
+      "uuids": [
+        "4c253b36-fd0b-4e6d-b4d8-b227972af4da"
+      ],
+      "pick_one_of_x": false,
+      "pick_options": {},
+      "folders": {
+        "BepInExPack": "base"
+      },
+      "files": {}
+    },
+    {
+      "name": "Snackalack-RiskInTime",
+      "uuids": [
+        "14d66451-be68-4698-9099-6dacd293709b"
+      ],
+      "pick_one_of_x": true,
+      "pick_options": {
+        "Easy Difficulty": [
+          "Modes\\aRiskinTime [EASY].dll",
+          "plugins"
+        ],
+        "Normal Difficulty": [
+          "Modes\\aRiskinTime [NORMAL].dll",
+          "plugins"
+        ],
+        "Hard Difficulty": [
+          "Modes\\aRiskinTime [HARD].dll",
+          "plugins"
+        ]
+      },
+      "folders": {},
+      "files": {}
+    }
+  ],
+  "folders": {
+    "plugins": "plugins",
+    "core": "core",
+    "config": "config",
+    "monomod": "monomod",
+    "patchers": "patchers",
+    "EN_US": "Risk of Rain 2_Data\\Language\\en",
+    "Risk of Rain 2_Data": "Risk of Rain 2_Data",
+    "BepInEx": "BepInEx"
+  },
+  "files": {
+    ".dll": "plugins",
+    ".font": "plugins",
+    ".language": "plugins"
+  },
+  "exclusions": [
+    "f21c391c-0bc5-431d-a233-95323b95e01b",
+    "7fe47918-ab05-4c4c-bd5e-15fb03b4ba20",
+    "c3d72c0a-5c1a-4dd2-8211-1e3d1f10d875",
+    "dc2e87b3-6bd6-42fa-9695-dbb77ebbbb87",
+    "01a37972-5a4f-4419-8725-f54a29c862d3",
+    "e674052c-bfd5-40c4-83d7-f090dd1f539e",
+    "ff3517dc-4deb-43a4-afba-8e9ec20e0490",
+    "c3d72c0a-5c1a-4dd2-8211-1e3d1f10d875",
+    "fcceee56-3a51-4685-9b1d-e095eac4a10c"
+  ]
+}
