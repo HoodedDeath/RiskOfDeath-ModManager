@@ -32,6 +32,7 @@ When you click the "For Mod Devs" button, it will open a form that starts with t
 - Main priority work currently will be fixing the listing of the mods, making the uninstallation system, and backing up any files that would get overwritten
 - Style work
 - Keeping up with any special case mods that surface
+- Next major version (V3.0.0) will (likely) be the update to include mod profiles
 
 # Current Issues
 - List of installed mods is not currently persistent (WILL BE FIXED SOON)
@@ -41,3 +42,4 @@ When you click the "For Mod Devs" button, it will open a form that starts with t
 - 1.0.0 -> Initial release
 - 1.0.1 -> Update RuleSet to not try installing itself to RoR2
 - 1.0.2 -> Fix Readme
+- 2.0.0 -> Implemented Uninstall and Update functionality, as well as update check for application
