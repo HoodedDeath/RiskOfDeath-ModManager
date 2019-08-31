@@ -10,32 +10,65 @@ using System.Reflection;
 using System.Windows.Forms;
 using Newtonsoft.Json;
 using HoodedDeathHelperLibrary;
+using System.Diagnostics;
 
 namespace RiskOfDeath_ModManager
 {
     public class ModContainer
     {
-        private List<Mod> mods = new List<Mod>();
+        private readonly List<Mod> mods = new List<Mod>();
         private string BEP_UUID => "4c253b36-fd0b-4e6d-b4d8-b227972af4da";
         private Mod bep;
         private string R2API_UUID => "75541a7e-8bfc-4585-a842-5dbf1aae5b3d";
         private Mod r2api;
+        private string THIS_UUID => "ab3e2616-672f-4791-91a9-a09647d7f26d";
+        private Mod this_mod;
+        private string this_vn = "2.0.0";
         public RuleSet Rules { get; private set; }
-        private List<string> installedmods = new List<string>();
+        private Dictionary<string, MappedInstalledMod> installedmods = new Dictionary<string, MappedInstalledMod>();
         private string ror2;
+
+        /// <summary>
+        /// Do not call without calling UpdateModLists first
+        /// </summary>
+        public List<MiniMod> AvailableMods { get; private set; } = new List<MiniMod>();
+        /// <summary>
+        /// Do not call without calling UpdateModLists first
+        /// </summary>
+        public List<InstalledMod> InstalledMods { get; private set; } = new List<InstalledMod>();
+        /// <summary>
+        /// Do not call without calling UpdateModLists first
+        /// </summary>
+        public List<InstalledMod> InstalledDependencies { get; private set; } = new List<InstalledMod>(); //CHANGE TO A DEPENDANCY CLASS OF SOME TYPE
 
         public ModContainer(string jsonFromThunderStore, string ror2Path)
         {
             this.ror2 = ror2Path;
+            //Check for old installed json file
+            if (!File.Exists(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "checked")))
+            {
+                if (File.Exists(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "installed.json")))
+                {
+                    if (MessageBox.Show("There has been a major change to the way installed mods are saved and your current installed mods file can no longer be used. If you choose yes, the current file holding installed mods will be deleted. This manager works best with fresh, unmodified installation of Risk of Rain 2.", "Changes to installation file", MessageBoxButtons.YesNo) == DialogResult.Yes)
+                    {
+                        File.Delete(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "installed.json"));
+                    }
+                    else throw new CloseEverythingException();
+                }
+                FileStream temp = File.Create(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "checked"));
+                temp.Close();
+                temp.Dispose();
+            }
             //Read installed mods
             try
             {
                 StreamReader sr = new StreamReader(File.OpenRead(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "installed.json")));
-                this.installedmods = JsonConvert.DeserializeObject<List<string>>(sr.ReadToEnd());
+                this.installedmods = JsonConvert.DeserializeObject<Dictionary<string, MappedInstalledMod>>(sr.ReadToEnd());
                 sr.Close();
                 sr.Dispose();
             }
-            catch (Exception e) { Console.WriteLine("Failed to load installed mods.\n{0}{1}", e.Message, e.StackTrace); }
+            catch (FileNotFoundException) { Console.WriteLine("Installed mods file does not exist."); }
+            catch (Exception e) { Console.WriteLine(e.Message + e.StackTrace); }
             //Read RuleSet
             try
             {
@@ -46,9 +79,9 @@ namespace RiskOfDeath_ModManager
             }
             catch (FileNotFoundException) { Console.WriteLine("RuleSet file cannot be found. Downloads may not function."); MessageBox.Show("RuleSet file cannot be found. Downloads may not function."); }
             catch (Exception e) { Console.WriteLine(e.Message + e.StackTrace); new MessageForm().Show(e.Message + e.StackTrace, "An error occurred while loading RuleSet"); }
-            //this.mods = JsonConvert.DeserializeObject<List<Mod>>(jsonFromThunderStore);
             DeserializeMods(jsonFromThunderStore);
-            //bool t = CheckBepWithR2API(ror2Path);
+            if (this.this_mod.GetLatestVersion().VersionNumber.IsNewer(this.this_vn) && MessageBox.Show("There's a new version of Risk of Death available. Would you like to open Thunderstore to download the latest version?", "Update?", MessageBoxButtons.YesNo) == DialogResult.Yes)
+            { Process.Start("explorer.exe", "https://thunderstore.io/package/HoodedDeath/RiskOfDeathModManager/"); throw new CloseEverythingException(); }
             if (!CheckBepWithR2API(ror2Path))
             {
                 Console.WriteLine("BepInEx/R2API not installed/invalid. Beginning download of latest version.");
@@ -73,7 +106,9 @@ namespace RiskOfDeath_ModManager
         {
             List<ModJson> temp = JsonConvert.DeserializeObject<List<ModJson>>(json);
             foreach (ModJson mj in temp)
-                if (mj.uuid4 == BEP_UUID)
+                if (mj.uuid4 == THIS_UUID)
+                    this.this_mod = new Mod(mj);
+                else if (mj.uuid4 == BEP_UUID)
                     this.bep = new Mod(mj);
                 else if (mj.uuid4 == R2API_UUID)
                     this.r2api = new Mod(mj);
@@ -82,6 +117,7 @@ namespace RiskOfDeath_ModManager
         }
         private bool CheckBepWithR2API(string instPath)
         {
+            //return this.installedmods.ContainsKey(this.bep.LongName) && this.installedmods.ContainsKey(this.r2api.LongName);
             //Check BepInEx
             string bep = System.IO.Path.Combine(instPath, "BepInEx");
             if (!File.Exists(System.IO.Path.Combine(instPath, "doorstop_config.ini"))) return false;
@@ -128,14 +164,15 @@ namespace RiskOfDeath_ModManager
             string plugins = System.IO.Path.Combine(bep, "plugins");
             if (!Directory.Exists(plugins)) return false;
             //Check R2API withing plugins
-            string r2api = System.IO.Path.Combine(plugins, "R2API");
+            string r2api = System.IO.Path.Combine(plugins, this.r2api.GetLatestVersion().DependencyString, "R2API");
             if (!Directory.Exists(r2api)) return false;
             if (!File.Exists(System.IO.Path.Combine(r2api, "MMHOOK_Assembly-CSharp.dll"))) return false;
             if (!File.Exists(System.IO.Path.Combine(r2api, "R2API.dll"))) return false;
             //If nothing failed, BepInEx is installed correctly
             return true;
         }
-        private Version FindMod(string dependencyString)
+        [DebuggerStepThrough]
+        public Version FindMod(string dependencyString)
         {
             foreach (Version v in this.bep.Versions)
                 if (v.DependencyString == dependencyString)
@@ -150,32 +187,43 @@ namespace RiskOfDeath_ModManager
             return null;
         }
 
+        public void Download(bool backupOnOverwrite, params string[] modStrings)
+        {
+            foreach (string s in modStrings)
+                Download(s, backupOnOverwrite);
+        }
         public void Download(params string[] modStrings)
         {
             foreach (string s in modStrings)
-                Download(s);
+                Download(s, true);
+        }
+        public void Download(string dependencyString)
+        {
+            Download(dependencyString, true);
         }
         //Needs to download dependencies
         //Needs to save what mods are installed
         //possibly needs to handle updates
 
         //when installing - if there's folders  instead of just dll's, copy contents into subfolders in corrosponding folders (example: contents of plugins for R2API goes to /BepInEx/plugins/<DependencyString>/ )
-        public void Download(string dependencyString)
+        public void Download(string dependencyString, bool backupOnOverwrite)
         {
-            string test = "";
+            //Get version
+            Version v = FindMod(dependencyString);
+            Download(v.Dependencies.ToArray());
+            //Test installed
+            /*string test = "";
             string[] testar = dependencyString.Split('-');
             for (int i = 0; i < testar.Length - 1; i++)
                 test += testar[i] + "-";
-            test = test.Substring(0, test.Length - 1);
-            if (installedmods.Contains(test))
+            test = test.Substring(0, test.Length - 1);*/
+            if (installedmods.ContainsKey(v.ParentMod.LongName) && !new VersionNumber(installedmods[v.ParentMod.LongName].VersionNumber).IsOlder(v.VersionNumber))
                 return;
-            //
-            Version v = FindMod(dependencyString);
-            Download(v.Dependencies.ToArray());
-            //
+            //Check download path
             string path = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "downloads");
             if (!Directory.Exists(path))
                 Directory.CreateDirectory(path);
+            //Download package zip
             path = Path.Combine(path, v.DependencyString);
             using (var client = new WebClient())
             {
@@ -183,18 +231,23 @@ namespace RiskOfDeath_ModManager
                 client.DownloadFile(v.DownloadUrl, path + ".zip");
                 client.Dispose();
             }
+            //Extract package
             Console.WriteLine("Exctracting {0} ...", v.DependencyString);
             ZipFile.ExtractToDirectory(path + ".zip", path);
             string workingdir = path;
+            //Files to not worry about copying
             string[] excludedfiles = new string[] { "icon.png", "license.txt", "manifest.json", "readme.md", "instructions.txt", "license", "credits.txt", "icon.psd", "assetplus.xml", "changelog.md", "license.md" };
-            if (File.Exists(Path.Combine(workingdir, "rules.json")))
+            //Begin install
+            List<string> fileList = new List<string>();
+            if (File.Exists(Path.Combine(workingdir, "rules.json"))) //Author defined rules
             {
+                //Read rules file
                 Console.WriteLine("Installing with author-defined rule set ...");
                 StreamReader sr = new StreamReader(File.OpenRead(Path.Combine(workingdir, "rules.json")));
                 Dictionary<string, string> dict = JsonConvert.DeserializeObject<Dictionary<string, string>>(sr.ReadToEnd());
                 sr.Close();
                 sr.Dispose();
-                // author's rules
+                //Work through each directory in package
                 foreach (string p in Directory.GetDirectories(workingdir, "*", SearchOption.TopDirectoryOnly))
                 {
                     string[] parr = p.Split('\\');
@@ -250,7 +303,10 @@ namespace RiskOfDeath_ModManager
                                 break;
                         }
                         VerifyPathToFile(s);
+                        if (backupOnOverwrite && File.Exists(modf))
+                            File.Move(s, s + ".bak");
                         File.Copy(modf, s, true);
+                        fileList.Add(s);
                         Console.WriteLine("\"{0}\" copied to \"{1}\"", modf, s);
 
                     }
@@ -284,8 +340,9 @@ namespace RiskOfDeath_ModManager
                             DialogResult res = form.ShowDialog();
                             if (res == DialogResult.Cancel)
                             {
-                                Console.WriteLine("Cancelling mod installation ...");
-                                Directory.Delete(workingdir);
+                                Console.WriteLine("Cancelling mod installation after options cancel ...");
+                                //Directory.Delete(workingdir);
+                                Helper.DeleteDirectory(workingdir);
                                 return;
                             }
                             else if (res == DialogResult.OK)
@@ -303,11 +360,14 @@ namespace RiskOfDeath_ModManager
                                         break;
                                 }
                                 VerifyPathToFile(s);
+                                if (backupOnOverwrite && File.Exists(s))
+                                    File.Move(s, s + ".bak");
                                 File.Copy(mod, s, true);
+                                fileList.Add(s);
                                 Console.WriteLine("{0} -> Selected {1}", v.ParentMod.LongName, k.Key);
                             }
                             else
-                                Console.WriteLine("+\n+\n+\nidk wtf just happened here\n+\n+\n+");
+                                Console.WriteLine("+\n+\n+\nidk wtf just happened here - options dialog should've only given a dialog result of ok or cancel\n+\n+\n+");
                         }
                     }
                     //Folders
@@ -375,7 +435,10 @@ namespace RiskOfDeath_ModManager
                                     break;
                             }
                             VerifyPathToFile(s);
+                            if (backupOnOverwrite && File.Exists(s))
+                                File.Move(s, s + ".bak");
                             File.Copy(modf, s, true);
+                            fileList.Add(s);
                             Console.WriteLine("\"{0}\" copied to \"{1}\"", modf, s);
                             ignore.Add(modf.ToLower());
                         }
@@ -401,7 +464,10 @@ namespace RiskOfDeath_ModManager
                                 break;
                         }
                         VerifyPathToFile(s);
+                        if (backupOnOverwrite && File.Exists(s))
+                            File.Move(s, s + ".bak");
                         File.Copy(f, s, true);
+                        fileList.Add(s);
                         Console.WriteLine("\"{0}\" copied to \"{1}\"", f, s);
                         ignore.Add(f.ToLower());
                     }
@@ -466,7 +532,10 @@ namespace RiskOfDeath_ModManager
                                     break;
                             }
                             VerifyPathToFile(s);
+                            if (backupOnOverwrite && File.Exists(s))
+                                File.Move(s, s + ".bak");
                             File.Copy(modf, s, true);
+                            fileList.Add(s);
                             Console.WriteLine("\"{0}\" copied to \"{1}\"", modf, s);
                         }
                     }
@@ -492,23 +561,54 @@ namespace RiskOfDeath_ModManager
                                 break;
                         }
                         VerifyPathToFile(s);
+                        if (backupOnOverwrite && File.Exists(s))
+                            File.Move(s, s + ".bak");
                         File.Copy(f, s, true);
+                        fileList.Add(s);
                         Console.WriteLine("\"{0}\" copied to \"{1}\"", f, s);
                     }
 
                 }
             }
             //Directory.Delete(workingdir);
+            Helper.DeleteDirectory(workingdir);
 
             //
             //don't forget all folders not covered in ruleset get their contents copied into BepInEx\plugins
             //SeikoML should be replaced by SeikoMLCompatLayer
-            this.installedmods.Add(test);
+            MappedInstalledMod map = new MappedInstalledMod() { VersionNumber = v.VersionNumber.ToString(), Files = fileList.ToArray() };
+            this.installedmods.Add(v.ParentMod.LongName, map);
+            if (File.Exists(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "installed.json")))
+                File.Delete(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "installed.json"));
             StreamWriter sw = new StreamWriter(File.Open(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "installed.json"), FileMode.OpenOrCreate));
             sw.Write(JsonConvert.SerializeObject(this.installedmods, Formatting.Indented));
             sw.Flush();
             sw.Close();
             sw.Dispose();
+        }
+        public void Uninstall(string dependencyString)
+        {
+            Version v = FindMod(dependencyString);
+            string[] files = this.installedmods[v.ParentMod.LongName].Files;
+            foreach (string file in files)
+            {
+                File.Delete(file);
+                if (File.Exists(file + ".bak"))
+                    File.Move(file + ".bak", file);
+            }
+            this.installedmods.Remove(v.ParentMod.LongName);
+            if (File.Exists(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "installed.json")))
+                File.Delete(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "installed.json"));
+            StreamWriter sw = new StreamWriter(File.Open(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "installed.json"), FileMode.OpenOrCreate));
+            sw.Write(JsonConvert.SerializeObject(this.installedmods, Formatting.Indented));
+            sw.Flush();
+            sw.Close();
+            sw.Dispose();
+        }
+        public void UpdateMod(string dependencyString)
+        {
+            Uninstall(dependencyString);
+            Download(FindMod(dependencyString).ParentMod.GetLatestVersion().DependencyString);
         }
         private void VerifyPathToFile(string path)
         {
@@ -525,6 +625,38 @@ namespace RiskOfDeath_ModManager
             }
         }
 
+        public void UpdateModLists()
+        {
+            this.AvailableMods = new List<MiniMod>();
+            this.InstalledMods = new List<InstalledMod>();
+            this.InstalledDependencies = new List<InstalledMod>
+            {
+                new InstalledMod(this.bep, this.bep.GetLatestVersion()),
+                new InstalledMod(this.r2api, this.r2api.GetLatestVersion())
+            };
+            foreach (Mod m in this.mods)
+            {
+                if (this.installedmods.ContainsKey(m.LongName))
+                {
+                    Version v = FindMod(string.Format("{0}-{1}", m.LongName, this.installedmods[m.LongName].VersionNumber));
+                    this.InstalledMods.Add(new InstalledMod(v.ParentMod, v));
+                    foreach (string dep in v.Dependencies)
+                    {
+                        v = FindMod(dep);
+                        if (!this.InstalledDependencies.Contains(new InstalledMod(v.ParentMod, v)))
+                            this.InstalledDependencies.Add(new InstalledMod(v.ParentMod, v));
+                    }
+                }
+                else if (!this.Rules.Exclusions.Contains(m.UUID4))
+                    this.AvailableMods.Add(new MiniMod(m));
+            }
+            List<InstalledMod> temp = new List<InstalledMod>();
+            foreach (InstalledMod im in this.InstalledMods)
+                if (!this.InstalledDependencies.Contains(im))
+                    temp.Add(im);
+            this.InstalledMods = temp;
+        }
+        //
         public List<MiniMod> ModsToList
         {
             get {
@@ -535,6 +667,7 @@ namespace RiskOfDeath_ModManager
                 return t;
             }
         }
+        //
     }
     public class RuleSet
     {
@@ -575,7 +708,8 @@ namespace RiskOfDeath_ModManager
         public bool IsPinned { get; private set; }
         public bool IsDeprecated { get; private set; }
         public List<Version> Versions { get; private set; }
-
+        
+        [DebuggerStepThrough]
         public Mod(ModJson mod)
         {
             this.Name = mod.name;
@@ -597,6 +731,7 @@ namespace RiskOfDeath_ModManager
             return t;
         }
 
+        [DebuggerStepThrough]
         public Version GetLatestVersion()
         {
             Version temp = this.Versions[0];
@@ -641,5 +776,45 @@ namespace RiskOfDeath_ModManager
                 t.Add(new MiniVersion(v));
             return t;
         }
+    }
+    public class InstalledMod
+    {
+        public string Name { get; private set; }
+        public string LongName { get; private set; }
+        public string Owner { get; private set; }
+        public string HasUpdate { get; private set; }
+        public InstalledVersion Version { get; private set; }
+        private List<VersionNumber> Versions { get; set; } = new List<VersionNumber>();
+
+        public InstalledMod(Mod m, Version v)
+        {
+            this.Name = m.Name;
+            this.LongName = m.LongName;
+            this.Owner = m.Owner;
+            this.Version = new InstalledVersion(v, this);
+            foreach (Version va in m.Versions)
+                this.Versions.Add(va.VersionNumber);
+
+        }
+
+        public bool IsUpToDate()
+        {
+            bool t = false;
+            foreach (VersionNumber v in this.Versions)
+            {
+                if (t)
+                    break;
+                t |= v.IsNewer(this.Version.VersionNumber);
+            }
+            return !t;
+        }
+    }
+
+    class MappedInstalledMod
+    {
+        [JsonProperty("version_number")]
+        public string VersionNumber { get; set; }
+        [JsonProperty("files")]
+        public string[] Files { get; set; }
     }
 }

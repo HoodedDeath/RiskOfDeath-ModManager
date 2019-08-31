@@ -42,18 +42,26 @@ namespace RiskOfDeath_ModManager
             Console.WriteLine("Please wait while loading.");
             try
             {
-                //Application.EnableVisualStyles();
-                //Application.SetCompatibleTextRenderingDefault(false);
-                //Application.Run(new Form1(s, args.Contains("nolaunch"), args.Contains("hoodeddeath")));
-                _ = new Form1(s, args.Contains("nolaunch"), args.Contains("hoodeddeath")).ShowDialog();
+                try
+                {
+                    //Application.EnableVisualStyles();
+                    //Application.SetCompatibleTextRenderingDefault(false);
+                    //Application.Run(new Form1(s, args.Contains("nolaunch"), args.Contains("hoodeddeath")));
+                    Form1 form = new Form1(s, args.Contains("nolaunch"), args.Contains("hoodeddeath"));
+                    form.ShowDialog();
+                    form.Dispose();
+                }
+                catch (IndexOutOfRangeException)
+                {
+                    //Application.EnableVisualStyles();
+                    //Application.SetCompatibleTextRenderingDefault(false);
+                    //Application.Run(new Form1(s, false, false));
+                    Form1 form = new Form1(s, false, false);
+                    form.ShowDialog();
+                    form.Dispose();
+                }
             }
-            catch (IndexOutOfRangeException)
-            {
-                //Application.EnableVisualStyles();
-                //Application.SetCompatibleTextRenderingDefault(false);
-                //Application.Run(new Form1(s, false, false));
-                _ = new Form1(s, false, false).ShowDialog();
-            }
+            catch (CloseEverythingException) { return; }
             //Application.EnableVisualStyles();
             //Application.SetCompatibleTextRenderingDefault(false);
             //Application.Run(new Form1());

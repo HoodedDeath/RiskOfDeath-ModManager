@@ -29,14 +29,15 @@
         private void InitializeComponent()
         {
             this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.versionLinkLabel = new System.Windows.Forms.LinkLabel();
             this.downloadBtn = new System.Windows.Forms.Button();
             this.iconPictureBox = new System.Windows.Forms.PictureBox();
-            this.verComboBox = new System.Windows.Forms.ComboBox();
             this.beforeDescLabel = new System.Windows.Forms.Label();
             this.descLinkLabel = new System.Windows.Forms.LinkLabel();
             this.authorLabel = new System.Windows.Forms.Label();
             this.beforeAuthorLabel = new System.Windows.Forms.Label();
             this.beforeVerLabel = new System.Windows.Forms.Label();
+            this.verComboBox = new System.Windows.Forms.ComboBox();
             this.panel1 = new System.Windows.Forms.Panel();
             this.label1 = new System.Windows.Forms.Label();
             this.launchBtn = new System.Windows.Forms.Button();
@@ -46,6 +47,8 @@
             this.helpToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.panel2 = new System.Windows.Forms.Panel();
             this.label2 = new System.Windows.Forms.Label();
+            this.label3 = new System.Windows.Forms.Label();
+            this.panel3 = new System.Windows.Forms.Panel();
             this.groupBox1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.iconPictureBox)).BeginInit();
             this.menuStrip1.SuspendLayout();
@@ -53,9 +56,9 @@
             // 
             // groupBox1
             // 
+            this.groupBox1.Controls.Add(this.versionLinkLabel);
             this.groupBox1.Controls.Add(this.downloadBtn);
             this.groupBox1.Controls.Add(this.iconPictureBox);
-            this.groupBox1.Controls.Add(this.verComboBox);
             this.groupBox1.Controls.Add(this.beforeDescLabel);
             this.groupBox1.Controls.Add(this.descLinkLabel);
             this.groupBox1.Controls.Add(this.authorLabel);
@@ -63,13 +66,29 @@
             this.groupBox1.Controls.Add(this.beforeVerLabel);
             this.groupBox1.Enabled = false;
             this.groupBox1.Font = new System.Drawing.Font("Microsoft Sans Serif", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.groupBox1.Location = new System.Drawing.Point(807, 563);
+            this.groupBox1.Location = new System.Drawing.Point(704, 465);
             this.groupBox1.Name = "groupBox1";
             this.groupBox1.Size = new System.Drawing.Size(314, 85);
             this.groupBox1.TabIndex = 2;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA...";
             this.groupBox1.Visible = false;
+            // 
+            // versionLinkLabel
+            // 
+            this.versionLinkLabel.ActiveLinkColor = System.Drawing.SystemColors.ControlText;
+            this.versionLinkLabel.AutoSize = true;
+            this.versionLinkLabel.DisabledLinkColor = System.Drawing.Color.FromArgb(((int)(((byte)(133)))), ((int)(((byte)(133)))), ((int)(((byte)(134)))));
+            this.versionLinkLabel.Font = new System.Drawing.Font("Microsoft Sans Serif", 8F);
+            this.versionLinkLabel.LinkBehavior = System.Windows.Forms.LinkBehavior.HoverUnderline;
+            this.versionLinkLabel.LinkColor = System.Drawing.SystemColors.ControlText;
+            this.versionLinkLabel.Location = new System.Drawing.Point(123, 55);
+            this.versionLinkLabel.Name = "versionLinkLabel";
+            this.versionLinkLabel.Size = new System.Drawing.Size(45, 13);
+            this.versionLinkLabel.TabIndex = 8;
+            this.versionLinkLabel.TabStop = true;
+            this.versionLinkLabel.Text = "#0.0.0#";
+            this.versionLinkLabel.VisitedLinkColor = System.Drawing.SystemColors.ControlText;
             // 
             // downloadBtn
             // 
@@ -78,7 +97,7 @@
             this.downloadBtn.Name = "downloadBtn";
             this.downloadBtn.Size = new System.Drawing.Size(75, 23);
             this.downloadBtn.TabIndex = 4;
-            this.downloadBtn.Text = "Download";
+            this.downloadBtn.Text = "Uninstall";
             this.downloadBtn.UseVisualStyleBackColor = true;
             // 
             // iconPictureBox
@@ -90,20 +109,6 @@
             this.iconPictureBox.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
             this.iconPictureBox.TabIndex = 3;
             this.iconPictureBox.TabStop = false;
-            // 
-            // verComboBox
-            // 
-            this.verComboBox.Font = new System.Drawing.Font("Microsoft Sans Serif", 8F);
-            this.verComboBox.FormattingEnabled = true;
-            this.verComboBox.Items.AddRange(new object[] {
-            "1.0.0",
-            "1.0.1",
-            "1.0.2"});
-            this.verComboBox.Location = new System.Drawing.Point(123, 52);
-            this.verComboBox.Name = "verComboBox";
-            this.verComboBox.Size = new System.Drawing.Size(100, 21);
-            this.verComboBox.TabIndex = 6;
-            this.verComboBox.Text = "#UNKNOWN_VERSION#";
             // 
             // beforeDescLabel
             // 
@@ -158,12 +163,27 @@
             this.beforeVerLabel.TabIndex = 5;
             this.beforeVerLabel.Text = "Version:";
             // 
+            // verComboBox
+            // 
+            this.verComboBox.Font = new System.Drawing.Font("Microsoft Sans Serif", 8F);
+            this.verComboBox.FormattingEnabled = true;
+            this.verComboBox.Items.AddRange(new object[] {
+            "1.0.0",
+            "1.0.1",
+            "1.0.2"});
+            this.verComboBox.Location = new System.Drawing.Point(805, 595);
+            this.verComboBox.Name = "verComboBox";
+            this.verComboBox.Size = new System.Drawing.Size(100, 21);
+            this.verComboBox.TabIndex = 6;
+            this.verComboBox.Text = "#UNKNOWN_VERSION#";
+            // 
             // panel1
             // 
             this.panel1.AutoScroll = true;
+            this.panel1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.panel1.Location = new System.Drawing.Point(12, 47);
             this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(334, 398);
+            this.panel1.Size = new System.Drawing.Size(336, 398);
             this.panel1.TabIndex = 3;
             // 
             // label1
@@ -222,28 +242,49 @@
             // panel2
             // 
             this.panel2.AutoScroll = true;
-            this.panel2.Location = new System.Drawing.Point(352, 47);
+            this.panel2.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.panel2.Location = new System.Drawing.Point(354, 47);
             this.panel2.Name = "panel2";
-            this.panel2.Size = new System.Drawing.Size(334, 398);
+            this.panel2.Size = new System.Drawing.Size(336, 398);
             this.panel2.TabIndex = 4;
             // 
             // label2
             // 
             this.label2.AutoSize = true;
             this.label2.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label2.Location = new System.Drawing.Point(355, 24);
+            this.label2.Location = new System.Drawing.Point(357, 24);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(112, 20);
             this.label2.TabIndex = 7;
             this.label2.Text = "Installed Mods";
+            // 
+            // label3
+            // 
+            this.label3.AutoSize = true;
+            this.label3.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label3.Location = new System.Drawing.Point(696, 24);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(176, 20);
+            this.label3.TabIndex = 8;
+            this.label3.Text = "Installed Dependencies";
+            // 
+            // panel3
+            // 
+            this.panel3.Location = new System.Drawing.Point(697, 48);
+            this.panel3.Name = "panel3";
+            this.panel3.Size = new System.Drawing.Size(200, 397);
+            this.panel3.TabIndex = 9;
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1133, 660);
+            this.Controls.Add(this.panel3);
+            this.Controls.Add(this.label3);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.panel2);
+            this.Controls.Add(this.verComboBox);
             this.Controls.Add(this.launchBtn);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.groupBox1);
@@ -282,6 +323,9 @@
         private System.Windows.Forms.ToolStripMenuItem helpToolStripMenuItem;
         private System.Windows.Forms.Panel panel2;
         private System.Windows.Forms.Label label2;
+        private System.Windows.Forms.LinkLabel versionLinkLabel;
+        private System.Windows.Forms.Label label3;
+        private System.Windows.Forms.Panel panel3;
     }
 }
 

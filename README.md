@@ -7,7 +7,7 @@
  
 - This currently only works with BepInEx mods. Support for the SeikoML mods is planned, thanks to yoshisman8 - SeikoML Compat Layer (though this feature is on the back burner)
 
- # For Mod Developers
+# For Mod Developers
  
 If you want to guarantee that your mod will install properly with my manager, there are a couple options.
 - You can set up your mod folder system such that the structure mimics the folder system in BepInEx. If the dll or other files for your mod just need to go into the plugins folder, no need to worry! You can leave the files in the top-level of the archive, or in a folder that doesn't have the name same as a BepInEx folder
@@ -40,3 +40,4 @@ When you click the "For Mod Devs" button, it will open a form that starts with t
 # Changlog
 - 1.0.0 -> Initial release
 - 1.0.1 -> Update RuleSet to not try installing itself to RoR2
+- 1.0.2 -> Fix Readme

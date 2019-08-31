@@ -33,7 +33,8 @@ namespace RiskOfDeath_ModManager
                 this._ror2Path = ror2Path;
             InitializeComponent();
             this._mods = LoadPackages();
-            ListPackages(this._mods.ModsToList);
+            //this._mods.UpdateModLists();
+            ListPackages();
             groupBox1.Text = Helper.Truncate(groupBox1.Text, 30);
             Console.WriteLine("Done loading.");
             //
@@ -94,13 +95,60 @@ namespace RiskOfDeath_ModManager
             WebRequest req = WebRequest.Create(THUNDERSTORE_PKG);
             WebResponse resp = req.GetResponse();
             StreamReader sr = new StreamReader(resp.GetResponseStream());
-            return new ModContainer(sr.ReadToEnd(), this._ror2Path);
+            ModContainer ret = new ModContainer(sr.ReadToEnd(), this._ror2Path);
+            sr.Close();
+            sr.Dispose();
+            return ret;
         }
-        private void ListPackages(List<MiniMod> mods)
+        private void ListPackages()
         {
-            int[] location = new int[] { 3, -87 };
+            this._mods.UpdateModLists();
+
+            this.panel1.AutoScrollPosition = new Point(0, 0);
+            this.panel2.AutoScrollPosition = new Point(0, 0);
+            this.panel3.AutoScrollPosition = new Point(0, 0);
+            this.panel1.Controls.Clear();
+            this.panel2.Controls.Clear();
+            this.panel3.Controls.Clear();
+
+            int[] aLocation = new int[] { 3, -87 };
+            foreach (MiniMod m in this._mods.AvailableMods)
+                this.panel1.Controls.Add(new DownloadableGrouping(this, m) { Location = new Point(aLocation[0], aLocation[1] += 90) });
+
+            int[] iLocation = new int[] { 3, -87 };
+            foreach (InstalledMod m in this._mods.InstalledMods)
+                this.panel2.Controls.Add(new InstalledGrouping(m, this) { Location = new Point(iLocation[0], iLocation[1] += 90) });
+
+            int[] dLocation = new int[] { 3, -16 };
+            List<string> temp = new List<string>();
+            foreach (InstalledMod im in this._mods.InstalledDependencies)
+                if (temp.Find((x) => x.Contains(im.LongName)) == null)
+                    temp.Add(im.Version.DependencyString);
+                else
+                {
+                    string s = im.LongName;
+                    string test = null;
+                    foreach (InstalledMod m in this._mods.InstalledDependencies)
+                    {
+                        if (test != null)
+                            break;
+                        if (m.LongName == s)
+                            test = m.LongName;
+                    }
+                    test = temp.Find((x) => x.Contains(test));
+                    if (im.Version.VersionNumber.IsNewer(this._mods.FindMod(test).VersionNumber))
+                    {
+                        temp.Remove(test);
+                        temp.Add(im.Version.DependencyString);
+                    }
+                }
+            //Label depLabel = new Label { AutoSize = true, Name = "depLabel", Size = new Size(153, 13), TabIndex = 10 };
+            foreach (string s in temp)
+                this.panel3.Controls.Add(new Label { AutoSize = true, Location = new Point(dLocation[0], dLocation[1] += 19), Text = s });
+
+            /*int[] location = new int[] { 3, -87 };
             foreach (MiniMod m in mods.ToArray())
-                this.panel1.Controls.Add(new DownloadableGrouping(this, m) { Location = new Point(location[0], location[1] += 90) });
+                this.panel1.Controls.Add(new DownloadableGrouping(this, m) { Location = new Point(location[0], location[1] += 90) });*/
         }
 
         private void LinkLabel1_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
@@ -124,22 +172,60 @@ namespace RiskOfDeath_ModManager
             switch (e.Button)
             {
                 case MouseButtons.Right:
-                    _ = new CreatePerModRules().ShowDialog();
+                    CreatePerModRules form = new CreatePerModRules();
+                    form.ShowDialog();
+                    form.Dispose();
                     break;
                 default:
                     if (_hd)
-                        _ = new HD().ShowDialog();
+                    {
+                        HD f = new HD();
+                        f.ShowDialog();
+                        f.Dispose();
+                    }
                     else
-                        _ = new CreatePerModRules().ShowDialog();
+                    {
+                        CreatePerModRules f = new CreatePerModRules();
+                        f.ShowDialog();
+                        f.Dispose();
+                    }
                     break;
             }
         }
 
-        private int[] loc = new int[] { 3, -87 };
-        public void MoveMe(DownloadableGrouping d)
+        //private readonly int[] loc = new int[] { 3, -87 };
+        /*public void MoveMe(DownloadableGrouping d)
         {
-            d.Location = new Point(loc[0], loc[1] += 90);
-            this.panel2.Controls.Add(d);
+            //d.Location = new Point(loc[0], loc[1] += 90);
+            //this.panel2.Controls.Add(d);
+            this.panel1.Controls.Remove(d);
+            Version v = this._mods.FindMod(d.GetMod().Versions[d.VersionIndex()].DependencyString);
+            //InstalledMod i = new InstalledMod(v.ParentMod, v);
+            //InstalledGrouping g = new InstalledGrouping(i, this) { Location = new Point(loc[0], loc[1] += 90) };
+            this.panel2.AutoScrollPosition = new Point(0, 0);
+            this.panel2.Controls.Add(new InstalledGrouping(new InstalledMod(v.ParentMod, v), this) { Location = new Point(loc[0], loc[1] += 90) });
+
+        }
+
+        public void UninstallMe(InstalledGrouping inst)
+        {
+
+        }*/
+
+        public void Install(string dependencyString)
+        {
+            this._mods.Download(dependencyString);
+            ListPackages();
+        }
+        public void Update(string dependencyString)
+        {
+            this._mods.UpdateMod(dependencyString);
+            ListPackages();
+        }
+        public void Uninstall(string dependencyString)
+        {
+            this._mods.Uninstall(dependencyString);
+            ListPackages();
         }
     }
     public class DownloadableGrouping : GroupBox
@@ -155,6 +241,9 @@ namespace RiskOfDeath_ModManager
 
         private readonly MiniMod mod;
         private readonly Form1 parent;
+
+        public MiniMod GetMod() => this.mod;
+        public int VersionIndex() => this.verComboBox.SelectedIndex;
 
         public DownloadableGrouping()
         {
@@ -251,6 +340,7 @@ namespace RiskOfDeath_ModManager
             this.verComboBox.TabStop = false;
             this.verComboBox.Text = "Failed...";
             this.verComboBox.SelectedIndex = 0;
+            this.verComboBox.ContextMenuChanged += new EventHandler(this.VersionChanged);
             // Download Button
             this.downloadBtn.Font = new Font("Microsoft Sans Serif", 8F);
             this.downloadBtn.Location = new Point(229, 50);
@@ -298,8 +388,10 @@ namespace RiskOfDeath_ModManager
         //Change to download through ModContainer instance in Form1
         private void DownloadBtn_Click(object sender, EventArgs e)
         {
-            this.parent.AllMods.Download(this.mod.Versions[this.verComboBox.SelectedIndex].DependencyString);
-            this.parent.MoveMe(this);
+            this.parent.Install(this.mod.Versions[this.verComboBox.SelectedIndex].DependencyString);
+            /*this.parent.AllMods.Download(this.mod.Versions[this.verComboBox.SelectedIndex].DependencyString);
+            this.parent.MoveMe(this);*/
+            //this.Dispose();
             /*
             Console.WriteLine(string.Format("Downloading: {0}-{1}-{2} ...", this.mod.Owner, this.mod.Name, this.mod.Versions[this.verComboBox.SelectedIndex].VersionNumber));
             using (var client = new WebClient())
@@ -311,9 +403,164 @@ namespace RiskOfDeath_ModManager
             Console.WriteLine("done");
             */
         }
+        private void VersionChanged(object sender, EventArgs e)
+        {
+            this.descLinkLabel.Text = this.mod.Versions[this.verComboBox.SelectedIndex].Description;
+        }
         public DownloadableGrouping GetMe()
         {
             return this;
+        }
+    }
+    public class InstalledGrouping : GroupBox
+    {
+        private LinkLabel descLinkLabel;
+        private Label beforeDescLabel;
+        private Button uninstallBtn;
+        private Label authorLabel;
+        private Label beforeVerLabel;
+        private Label beforeAuthorLabel;
+        private PictureBox iconPictureBox;
+        private LinkLabel versionLinkLabel;
+        //
+        private readonly InstalledMod mod;
+        private readonly Form1 parent;
+
+        public InstalledGrouping(InstalledMod m, Form1 p)
+        {
+            this.mod = m;
+            this.parent = p;
+            InitializeComponent();
+        }
+
+        private void InitializeComponent()
+        {
+            this.uninstallBtn = new Button();
+            this.iconPictureBox = new PictureBox();
+            this.beforeDescLabel = new Label();
+            this.descLinkLabel = new LinkLabel();
+            this.authorLabel = new Label();
+            this.beforeAuthorLabel = new Label();
+            this.beforeVerLabel = new Label();
+            this.versionLinkLabel = new LinkLabel();
+            this.SuspendLayout();
+            // uninstallBtn
+            this.uninstallBtn.Font = new Font("Microsoft Sans Serif", 8F);
+            this.uninstallBtn.Location = new Point(229, 50);
+            this.uninstallBtn.Name = "downloadBtn";
+            this.uninstallBtn.Size = new Size(75, 23);
+            this.uninstallBtn.TabIndex = 4;
+            this.uninstallBtn.Text = "Uninstall";
+            this.uninstallBtn.UseVisualStyleBackColor = true;
+            this.uninstallBtn.Click += new EventHandler(this.UninstallBtn_Click);
+            // iconPictureBox 
+            this.iconPictureBox.Location = new Point(6, 19);
+            this.iconPictureBox.Name = "iconPictureBox";
+            this.iconPictureBox.Size = new Size(60, 60);
+            this.iconPictureBox.SizeMode = PictureBoxSizeMode.Zoom;
+            this.iconPictureBox.TabIndex = 3;
+            this.iconPictureBox.TabStop = false;
+            try
+            {
+                if (mod.Version.IconUrl != null && mod.Version.IconUrl != "")
+                    this.iconPictureBox.LoadAsync(mod.Version.IconUrl);
+            }
+            catch (Exception)
+            {
+                this.iconPictureBox.Image = Properties.Resources.MissingImage;
+            }
+            // beforeDescLabel
+            this.beforeDescLabel.AutoSize = true;
+            this.beforeDescLabel.Font = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            this.beforeDescLabel.Location = new Point(72, 20);
+            this.beforeDescLabel.Name = "beforeDescLabel";
+            this.beforeDescLabel.Size = new Size(63, 13);
+            this.beforeDescLabel.TabIndex = 0;
+            this.beforeDescLabel.Text = "Description:";
+            // descLinkLabel
+            this.descLinkLabel.AutoEllipsis = true;
+            this.descLinkLabel.Font = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            this.descLinkLabel.LinkBehavior = LinkBehavior.HoverUnderline;
+            this.descLinkLabel.LinkColor = SystemColors.ControlText;
+            this.descLinkLabel.Location = new Point(142, 20);
+            this.descLinkLabel.Name = "descLinkLabel";
+            this.descLinkLabel.Size = new Size(162, 13);
+            this.descLinkLabel.TabIndex = 1;
+            this.descLinkLabel.TabStop = true;
+            this.descLinkLabel.Text = mod.Version.Description ?? "#UNKNOWN_DESCRIPTION#";
+            // authorLabel
+            this.authorLabel.AutoEllipsis = true;
+            this.authorLabel.Font = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            this.authorLabel.Location = new Point(119, 36);
+            this.authorLabel.Name = "authorLabel";
+            this.authorLabel.Size = new Size(185, 13);
+            this.authorLabel.TabIndex = 6;
+            this.authorLabel.Text = mod.Owner ?? "#UNKNOWN_AUTHOR#";
+            // beforeAuthorLabel
+            this.beforeAuthorLabel.AutoSize = true;
+            this.beforeAuthorLabel.Font = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            this.beforeAuthorLabel.Location = new Point(72, 36);
+            this.beforeAuthorLabel.Name = "beforeAuthorLabel";
+            this.beforeAuthorLabel.Size = new Size(41, 13);
+            this.beforeAuthorLabel.TabIndex = 5;
+            this.beforeAuthorLabel.Text = "Author:";
+            // beforeVerLabel
+            this.beforeVerLabel.AutoSize = true;
+            this.beforeVerLabel.Font = new Font("Microsoft Sans Serif", 8F);
+            this.beforeVerLabel.Location = new Point(72, 55);
+            this.beforeVerLabel.Name = "beforeVerLabel";
+            this.beforeVerLabel.Size = new Size(45, 13);
+            this.beforeVerLabel.TabIndex = 5;
+            this.beforeVerLabel.Text = "Version:";
+            // versionLinkLabel
+            bool temp = !this.mod.IsUpToDate();
+            this.versionLinkLabel.ActiveLinkColor = SystemColors.ControlText;
+            this.versionLinkLabel.AutoSize = true;
+            this.versionLinkLabel.Font = new Font("Microsoft Sans Serif", 8F);
+            //this.versionLinkLabel.LinkBehavior = LinkBehavior.HoverUnderline;
+            this.versionLinkLabel.LinkBehavior = temp ? LinkBehavior.HoverUnderline : LinkBehavior.NeverUnderline;
+            //this.versionLinkLabel.LinkColor = SystemColors.ControlText;
+            this.versionLinkLabel.LinkColor = temp ? Color.FromArgb(255, 0, 0) : SystemColors.ControlText;
+            this.versionLinkLabel.Location = new Point(123, 55);
+            this.versionLinkLabel.Name = "versionLinkLabel";
+            this.versionLinkLabel.Size = new Size(45, 13);
+            this.versionLinkLabel.TabIndex = 8;
+            this.versionLinkLabel.TabStop = true;
+            this.versionLinkLabel.Text = mod.Version.VersionNumber.ToString() ?? "#0.0.0#";
+            this.versionLinkLabel.VisitedLinkColor = SystemColors.ControlText;
+            this.versionLinkLabel.LinkClicked += new LinkLabelLinkClickedEventHandler(this.VersionLink_Click);
+            //
+            this.Font = new Font("Microsoft Sans Serif", 11.25F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            this.Location = new Point(704, 465);
+            this.Name = "groupBox1";
+            this.Size = new Size(314, 85);
+            this.TabIndex = 2;
+            this.TabStop = false;
+            this.Text = Helper.Truncate(this.mod.Name ?? "#INSTALLED_GROUPING#", 30);
+            /*try { this.Text = Helper.Truncate(this.mod.Name, 30); }
+            catch (NullReferenceException) { this.Text = Helper.Truncate("#INSTALLED_GROUPING#", 30); }*/
+            this.Visible = true;
+            this.Controls.Add(this.versionLinkLabel);
+            this.Controls.Add(this.uninstallBtn);
+            this.Controls.Add(this.iconPictureBox);
+            this.Controls.Add(this.beforeDescLabel);
+            this.Controls.Add(this.descLinkLabel);
+            this.Controls.Add(this.authorLabel);
+            this.Controls.Add(this.beforeAuthorLabel);
+            this.Controls.Add(this.beforeVerLabel);
+            this.ResumeLayout(false);
+            this.PerformLayout();
+        }
+
+        private void UninstallBtn_Click(object sender, EventArgs e)
+        {
+            //parent.UninstallMe(this);
+            parent.Uninstall(this.mod.Version.DependencyString);
+        }
+
+        private void VersionLink_Click(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+            parent.Update(this.mod.Version.DependencyString);
         }
     }
 }

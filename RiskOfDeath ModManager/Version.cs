@@ -85,10 +85,23 @@ namespace RiskOfDeath_ModManager
         /// <returns>True if the calling VersionNumber is newer than the parameter, false if it is equal to or older than the paramete</returns>
         public bool IsNewer(VersionNumber vn)
         {
-            if (this.MajorBuild <= vn.MajorBuild) return false;
+            if (this.MajorBuild < vn.MajorBuild)
+                return false;
+            if (this.MajorBuild > vn.MajorBuild)
+                return true;
+            if (this.MinorBuild < vn.MinorBuild)
+                return false;
+            if (this.MinorBuild > vn.MinorBuild)
+                return true;
+            if (this.Revision < vn.Revision)
+                return false;
+            if (this.Revision > vn.Revision)
+                return true;
+
+            /*if (this.MajorBuild <= vn.MajorBuild) return false;
             if (this.MinorBuild <= vn.MinorBuild) return false;
-            if (this.Revision <= vn.Revision) return false;
-            return true;
+            if (this.Revision <= vn.Revision) return false;*/
+            return false;
         }
         /// <summary>
         /// Tests if this VersionNumber is newer than the given VersionNumber
@@ -130,5 +143,29 @@ namespace RiskOfDeath_ModManager
             IconUrl = v.IconUrl;
             VersionNumber = v.VersionNumber;
         }
+    }
+    public class InstalledVersion
+    {
+        public string Name { get; private set; }
+        public string LongName { get; private set; }
+        public string DependencyString => LongName;
+        public string Description { get; private set; }
+        public string IconUrl { get; private set; }
+        public VersionNumber VersionNumber { get; private set; }
+        public List<string> Dependencies { get; private set; }
+        public InstalledMod ParentMod { get; private set; }
+
+        public InstalledVersion(Version v, InstalledMod parent)
+        {
+            this.ParentMod = parent;
+            Name = v.Name;
+            LongName = v.LongName;
+            Description = v.Description;
+            IconUrl = v.IconUrl;
+            VersionNumber = v.VersionNumber;
+            Dependencies = v.Dependencies;
+        }
+
+        public bool IsNewest { get { return this.ParentMod.IsUpToDate(); } }
     }
 }
