@@ -44,11 +44,14 @@
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.exitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.forModDevsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.optionsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.linkManagerProtocolToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.helpToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.panel2 = new System.Windows.Forms.Panel();
             this.label2 = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
             this.panel3 = new System.Windows.Forms.Panel();
+            this.protocolBackgroundWorker = new System.ComponentModel.BackgroundWorker();
             this.groupBox1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.iconPictureBox)).BeginInit();
             this.menuStrip1.SuspendLayout();
@@ -212,6 +215,7 @@
             this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.exitToolStripMenuItem,
             this.forModDevsToolStripMenuItem,
+            this.optionsToolStripMenuItem,
             this.helpToolStripMenuItem});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
@@ -232,6 +236,21 @@
             this.forModDevsToolStripMenuItem.Size = new System.Drawing.Size(92, 20);
             this.forModDevsToolStripMenuItem.Text = "For Mod Devs";
             this.forModDevsToolStripMenuItem.MouseDown += new System.Windows.Forms.MouseEventHandler(this.ModDevs_MouseDown);
+            // 
+            // optionsToolStripMenuItem
+            // 
+            this.optionsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.linkManagerProtocolToolStripMenuItem});
+            this.optionsToolStripMenuItem.Name = "optionsToolStripMenuItem";
+            this.optionsToolStripMenuItem.Size = new System.Drawing.Size(61, 20);
+            this.optionsToolStripMenuItem.Text = "Options";
+            // 
+            // linkManagerProtocolToolStripMenuItem
+            // 
+            this.linkManagerProtocolToolStripMenuItem.Name = "linkManagerProtocolToolStripMenuItem";
+            this.linkManagerProtocolToolStripMenuItem.Size = new System.Drawing.Size(194, 22);
+            this.linkManagerProtocolToolStripMenuItem.Text = "Link Manager Protocol";
+            this.linkManagerProtocolToolStripMenuItem.Click += new System.EventHandler(this.LinkManagerProtocolToolStripMenuItem_Click);
             // 
             // helpToolStripMenuItem
             // 
@@ -274,6 +293,12 @@
             this.panel3.Name = "panel3";
             this.panel3.Size = new System.Drawing.Size(200, 397);
             this.panel3.TabIndex = 9;
+            // 
+            // protocolBackgroundWorker
+            // 
+            this.protocolBackgroundWorker.WorkerSupportsCancellation = true;
+            this.protocolBackgroundWorker.DoWork += new System.ComponentModel.DoWorkEventHandler(this.ProtocolBackgroundWorker_DoWork);
+            this.protocolBackgroundWorker.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.ProtocolBackgroundWorker_RunWorkerCompleted);
             // 
             // Form1
             // 
@@ -326,6 +351,9 @@
         private System.Windows.Forms.LinkLabel versionLinkLabel;
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.Panel panel3;
+        private System.Windows.Forms.ToolStripMenuItem optionsToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem linkManagerProtocolToolStripMenuItem;
+        private System.ComponentModel.BackgroundWorker protocolBackgroundWorker;
     }
 }
 

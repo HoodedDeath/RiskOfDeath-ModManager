@@ -13,6 +13,8 @@ using System.Windows.Forms;
 using Microsoft.Win32;
 using Newtonsoft.Json;
 using HoodedDeathHelperLibrary;
+using System.Reflection;
+using System.Threading;
 
 namespace RiskOfDeath_ModManager
 {
@@ -24,7 +26,7 @@ namespace RiskOfDeath_ModManager
         private readonly bool _hd = false;
         public readonly ModContainer AllMods;
 
-        public Form1(string ror2Path, bool nolaunch, bool hd)
+        public Form1(string ror2Path, bool nolaunch, bool hd, bool startWithDownload)
         {
             _hd = hd;
             if (ror2Path == null || ror2Path == "" || ror2Path == "#UNKNOWN#")
@@ -34,7 +36,18 @@ namespace RiskOfDeath_ModManager
             InitializeComponent();
             this._mods = LoadPackages();
             //this._mods.UpdateModLists();
-            ListPackages();
+            string p = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "uritemp");
+            if (startWithDownload && File.Exists(p))
+            {
+                Console.WriteLine("Download requested from url protocol ...");
+                StreamReader sr = new StreamReader(File.OpenRead(p));
+                Install(sr.ReadLine());
+                sr.Close();
+                sr.Dispose();
+                File.Delete(p);
+            }
+            else
+                ListPackages();
             groupBox1.Text = Helper.Truncate(groupBox1.Text, 30);
             Console.WriteLine("Done loading.");
             //
@@ -47,9 +60,11 @@ namespace RiskOfDeath_ModManager
                 this.launchBtn.Enabled = false;
                 this.launchBtn.Visible = false;
             }
+            protocolBackgroundWorker.RunWorkerAsync();
         }
         private void Form1_Closing(object sender, FormClosingEventArgs e)
         {
+            protocolBackgroundWorker.CancelAsync();
             // --ONLY USE IF MODCONTAINER DOWNLOAD STARTS BREAKING--
             //this.AllMods.Dispose();
         }
@@ -226,6 +241,83 @@ namespace RiskOfDeath_ModManager
         {
             this._mods.Uninstall(dependencyString);
             ListPackages();
+        }
+
+        private void LinkManagerProtocolToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            DialogResult res = MessageBox.Show("This will let you use the \"Install with Mod Manager\" button on ThunderStore to launch this manager and download a mod. If you have another manager set up for that protocol, it will be overwritten. Do you want to continue?", "Confirm", MessageBoxButtons.YesNo);
+            if (res == DialogResult.Yes)
+            {
+                string p = Assembly.GetExecutingAssembly().Location;
+                StreamWriter sw = new StreamWriter(File.Open(Path.Combine(Path.GetDirectoryName(p), "temp"), FileMode.OpenOrCreate));
+                sw.WriteLine(p);
+                sw.Flush();
+                sw.Close();
+                sw.Dispose();
+                Process.Start(Path.Combine(Path.GetDirectoryName(p), "RiskOfDeath SetUrlProtocol.exe"));
+                //string s = (string)Registry.GetValue("HKEY_CLASSES_ROOT\\ror2mm", null, "");
+                //if (s == null || s == "")
+                //{
+                    /*Registry.SetValue("HKEY_CLASSES_ROOT\\ror2mm", null, "URL:ror2mm protocol");
+                    Registry.SetValue("HKEY_CLASSES_ROOT\\ror2mm", "URL Protocol", null);
+                    Registry.SetValue("HKEY_CLASSES_ROOT\\ror2mm\\Shell\\Open\\Command", null, "\"H:\\VisualStudio\\RiskOfDeath ModManager\\RiskOfDeath ModManager\\bin\\Debug\\RiskOfDeath ModManager.exe\" -- \"%1\"");*/
+                //}
+
+                /*Process cmd = new Process();
+                cmd.StartInfo.FileName = "cmd.exe";
+                cmd.StartInfo.RedirectStandardInput = true;
+                cmd.StartInfo.RedirectStandardOutput = true;
+                cmd.StartInfo.CreateNoWindow = true;
+                cmd.StartInfo.UseShellExecute = false;
+                cmd.Start();
+
+                cmd.StandardInput.WriteLine("echo Oscar");
+                cmd.StandardInput.Flush();
+                cmd.StandardInput.Close();
+                cmd.WaitForExit();
+                Console.WriteLine(cmd.StandardOutput.ReadToEnd());*/
+            }
+        }
+
+
+        private void ProtocolBackgroundWorker_DoWork(object sender, DoWorkEventArgs e)
+        {
+            BackgroundWorker worker = sender as BackgroundWorker;
+
+            while (true)
+            {
+                if (worker.CancellationPending)
+                {
+                    e.Cancel = true;
+                    break;
+                }
+
+                try
+                {
+                    if (File.Exists(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "uritemp")))
+                        break;
+                    Thread.Sleep(500);
+                }
+                catch (IOException ex) { Console.WriteLine("IOException during Protocol Background Worker.\n{0}{1}", ex.Message, ex.StackTrace); }
+                catch (Exception) { }
+            }
+        }
+        private void ProtocolBackgroundWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            if (e.Error != null)
+            {
+                Console.WriteLine(e.Error.Message + e.Error.StackTrace);
+            }
+            else if (!e.Cancelled)
+            {
+                Console.WriteLine("Download requested from url protocol ...");
+                StreamReader sr = new StreamReader(File.OpenRead(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "uritemp")));
+                Install(sr.ReadLine());
+                sr.Close();
+                sr.Dispose();
+                File.Delete(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "uritemp"));
+                protocolBackgroundWorker.RunWorkerAsync();
+            }
         }
     }
     public class DownloadableGrouping : GroupBox
@@ -561,6 +653,14 @@ namespace RiskOfDeath_ModManager
         private void VersionLink_Click(object sender, LinkLabelLinkClickedEventArgs e)
         {
             parent.Update(this.mod.Version.DependencyString);
+        }
+    }
+    public class StringEventArgs : EventArgs
+    {
+        public string MSG { get; private set; }
+        public StringEventArgs(string s) : base()
+        {
+            MSG = s;
         }
     }
 }

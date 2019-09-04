@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -11,12 +12,46 @@ namespace RiskOfDeath_ModManager
 {
     static class Program
     {
+        static Mutex m;
         /// <summary>
         /// The main entry point for the application.
         /// </summary>
         [STAThread]
         static void Main(string[] args)
         {
+            bool startdl = false;
+            if (File.Exists(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "uritemp")))
+                File.Delete(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "uritemp"));
+            //Check already running
+            try
+            {
+                m = new Mutex(true, Application.ProductName.ToString(), out bool first);
+                if (first == false && args[0] != null && args[0].StartsWith("ror2mm://"))
+                {
+                    Console.WriteLine("Application already running, setting up for download ...");
+                    WriteProtocolResult(args[0]);
+                    Console.WriteLine("Setup done, goodbye");
+                    return;
+                }
+                else if (!first)
+                {
+                    Console.WriteLine("Instance already running. Press any key to exit.");
+                    Console.ReadKey();
+                }
+                else if (args != null && args.Length > 0)
+                {
+                    if (args[0].StartsWith("ror2mm://"))
+                    {
+                        startdl = true;
+                        WriteProtocolResult(args[0]);
+                    }
+                    else
+                        startdl = false;
+                }
+            }
+            catch (Exception e) { Console.WriteLine(e.Message + e.StackTrace); }
+            //
+
             if (!Directory.Exists(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "downloads")))
                 Directory.CreateDirectory(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "downloads"));
             Console.WriteLine("Checking for Risk Of Rain 2 installation...");
@@ -44,29 +79,41 @@ namespace RiskOfDeath_ModManager
             {
                 try
                 {
-                    //Application.EnableVisualStyles();
-                    //Application.SetCompatibleTextRenderingDefault(false);
-                    //Application.Run(new Form1(s, args.Contains("nolaunch"), args.Contains("hoodeddeath")));
-                    Form1 form = new Form1(s, args.Contains("nolaunch"), args.Contains("hoodeddeath"));
+                    Form1 form = new Form1(s, args.Contains("nolaunch"), args.Contains("hoodeddeath"), startdl);
                     form.ShowDialog();
                     form.Dispose();
                 }
                 catch (IndexOutOfRangeException)
                 {
-                    //Application.EnableVisualStyles();
-                    //Application.SetCompatibleTextRenderingDefault(false);
-                    //Application.Run(new Form1(s, false, false));
-                    Form1 form = new Form1(s, false, false);
+                    Form1 form = new Form1(s, false, false, startdl);
                     form.ShowDialog();
                     form.Dispose();
                 }
             }
             catch (CloseEverythingException) { return; }
+            /*handle += _form.MsgHandle;
             //Application.EnableVisualStyles();
             //Application.SetCompatibleTextRenderingDefault(false);
             //Application.Run(new Form1());
+            int i = 0;
+            while (true)
+            {
+                if (i == 5)
+                    handle?.Invoke(null, new StringEventArgs("recursiveGecko-SimpleMacros-1.0.0")); // _form.MsgHandler.Invoke; // thread.Abort(); // _form.Close();
+                else
+                    Console.WriteLine("Waiting");
+                if (i <= 5)
+                    i++;
+                Thread.Sleep(5000);
+            }*/
             Console.WriteLine("Goodbye");
         }
+        /*static event EventHandler<StringEventArgs> handle;
+        static Form1 _form;
+        static void Thread_Work()
+        {
+            _form.ShowDialog();
+        }*/
         static string FindROR2Path()
         {
             string ret = "#UNKNOWN#";
@@ -153,6 +200,23 @@ namespace RiskOfDeath_ModManager
             }
 
             return ret;
+        }
+        static void WriteProtocolResult(string uri)
+        {
+            string depStr = "";
+            string[] split = uri.Split('/');
+            for (int i = split.Length - 4; i < split.Length - 1; i++)
+                depStr += split[i] + "-";
+            depStr = depStr.Substring(0, depStr.Length - 1);
+            Console.WriteLine(depStr);
+            string path = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "uritemp");
+            if (File.Exists(path))
+                File.Delete(path);
+            StreamWriter sw = new StreamWriter(File.Open(path, FileMode.OpenOrCreate));
+            sw.WriteLine(depStr);
+            sw.Flush();
+            sw.Close();
+            sw.Dispose();
         }
     }
 }
