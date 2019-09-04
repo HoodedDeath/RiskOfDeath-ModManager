@@ -23,7 +23,7 @@ namespace RiskOfDeath_ModManager
         private Mod r2api;
         private string THIS_UUID => "ab3e2616-672f-4791-91a9-a09647d7f26d";
         private Mod this_mod;
-        private string this_vn = "2.0.0";
+        private string this_vn = "2.1.0";
         public RuleSet Rules { get; private set; }
         private Dictionary<string, MappedInstalledMod> installedmods = new Dictionary<string, MappedInstalledMod>();
         private string ror2;
