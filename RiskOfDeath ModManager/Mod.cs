@@ -23,7 +23,7 @@ namespace RiskOfDeath_ModManager
         private Mod r2api;
         private string THIS_UUID => "ab3e2616-672f-4791-91a9-a09647d7f26d";
         private Mod this_mod;
-        private string this_vn = "2.1.0";
+        private string this_vn = "2.1.1";
         public RuleSet Rules { get; private set; }
         private Dictionary<string, MappedInstalledMod> installedmods = new Dictionary<string, MappedInstalledMod>();
         private string ror2;
@@ -218,6 +218,8 @@ namespace RiskOfDeath_ModManager
                 test += testar[i] + "-";
             test = test.Substring(0, test.Length - 1);*/
             if (installedmods.ContainsKey(v.ParentMod.LongName) && !new VersionNumber(installedmods[v.ParentMod.LongName].VersionNumber).IsOlder(v.VersionNumber))
+                return;
+            if (v.ParentMod.IsDeprecated && MessageBox.Show(string.Format("This mod ({0}) is deprecated and may not install and run properly. It is recommended that you find a newer mod instead. Do you want to continue with installing this mod?", v.DependencyString), "Deprecated Mod", MessageBoxButtons.YesNo) == DialogResult.No)
                 return;
             //Check download path
             string path = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "downloads");
