@@ -23,7 +23,7 @@ namespace RiskOfDeath_ModManager
         private Mod r2api;
         private string THIS_UUID => "ab3e2616-672f-4791-91a9-a09647d7f26d";
         private Mod this_mod;
-        private string this_vn = "2.1.1";
+        private string this_vn = "2.1.2";
         public RuleSet Rules { get; private set; }
         private Dictionary<string, MappedInstalledMod> installedmods = new Dictionary<string, MappedInstalledMod>();
         private string ror2;
@@ -117,7 +117,6 @@ namespace RiskOfDeath_ModManager
         }
         private bool CheckBepWithR2API(string instPath)
         {
-            //return this.installedmods.ContainsKey(this.bep.LongName) && this.installedmods.ContainsKey(this.r2api.LongName);
             //Check BepInEx
             string bep = System.IO.Path.Combine(instPath, "BepInEx");
             if (!File.Exists(System.IO.Path.Combine(instPath, "doorstop_config.ini"))) return false;
@@ -208,21 +207,19 @@ namespace RiskOfDeath_ModManager
         //when installing - if there's folders  instead of just dll's, copy contents into subfolders in corrosponding folders (example: contents of plugins for R2API goes to /BepInEx/plugins/<DependencyString>/ )
         public void Download(string dependencyString, bool backupOnOverwrite)
         {
-            //Get version
+            //Get version from dependency string
             Version v = FindMod(dependencyString);
+            //Download dependencies
             Download(v.Dependencies.ToArray());
-            //Test installed
-            /*string test = "";
-            string[] testar = dependencyString.Split('-');
-            for (int i = 0; i < testar.Length - 1; i++)
-                test += testar[i] + "-";
-            test = test.Substring(0, test.Length - 1);*/
+            //If the mod is already installed and the installed version is not older than this one, return, don't install this version
             if (installedmods.ContainsKey(v.ParentMod.LongName) && !new VersionNumber(installedmods[v.ParentMod.LongName].VersionNumber).IsOlder(v.VersionNumber))
                 return;
+            //If the mod is deprecated, prompt the user that it may not work and ask if they want to install anyway; return if result is no
             if (v.ParentMod.IsDeprecated && MessageBox.Show(string.Format("This mod ({0}) is deprecated and may not install and run properly. It is recommended that you find a newer mod instead. Do you want to continue with installing this mod?", v.DependencyString), "Deprecated Mod", MessageBoxButtons.YesNo) == DialogResult.No)
                 return;
-            //Check download path
+            //Path to download folder
             string path = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "downloads");
+            //If download folder doesn't exist, create it
             if (!Directory.Exists(path))
                 Directory.CreateDirectory(path);
             //Download package zip
@@ -230,11 +227,13 @@ namespace RiskOfDeath_ModManager
             using (var client = new WebClient())
             {
                 Console.WriteLine("Downloading {0} ...", v.DependencyString);
+                client.Proxy = null;
+                WebRequest.DefaultWebProxy = null;
                 client.DownloadFile(v.DownloadUrl, path + ".zip");
                 client.Dispose();
             }
             //Extract package
-            Console.WriteLine("Exctracting {0} ...", v.DependencyString);
+            Console.WriteLine("Extracting {0} ...", v.DependencyString);
             ZipFile.ExtractToDirectory(path + ".zip", path);
             string workingdir = path;
             //Files to not worry about copying
@@ -269,7 +268,7 @@ namespace RiskOfDeath_ModManager
                                 break;
                             case "plugins":
                                 // bep/plugins
-                                s = Path.Combine(ror2, "BepInEx", "plugins", s);
+                                s = Path.Combine(ror2, "BepInEx", "plugins", v.DependencyString, s);
                                 break;
                             case "patchers":
                                 // bep/patchers
@@ -301,7 +300,7 @@ namespace RiskOfDeath_ModManager
                                 break;
                             default:
                                 //act as plugins
-                                s = Path.Combine(ror2, "BepInEx", "plugins", s);
+                                s = Path.Combine(ror2, "BepInEx", "plugins", v.DependencyString, s);
                                 break;
                         }
                         VerifyPathToFile(s);
@@ -433,7 +432,7 @@ namespace RiskOfDeath_ModManager
                                     break;
                                 default:
                                     //act as plugins
-                                    s = Path.Combine(ror2, "BepInEx", "plugins", s);
+                                    s = Path.Combine(ror2, "BepInEx", "plugins", v.DependencyString, s);
                                     break;
                             }
                             VerifyPathToFile(s);
@@ -530,7 +529,7 @@ namespace RiskOfDeath_ModManager
                                     break;
                                 default:
                                     //act as plugins
-                                    s = Path.Combine(ror2, "BepInEx", "plugins", s);
+                                    s = Path.Combine(ror2, "BepInEx", "plugins", v.DependencyString, s);
                                     break;
                             }
                             VerifyPathToFile(s);
@@ -597,6 +596,16 @@ namespace RiskOfDeath_ModManager
                 File.Delete(file);
                 if (File.Exists(file + ".bak"))
                     File.Move(file + ".bak", file);
+                string temp = "";
+                string[] tarr = file.Split('\\');
+                for (int i = 0; i < tarr.Length - 1; i++)
+                    temp += tarr[i] + "\\";
+                try
+                {
+                    if (Directory.GetFiles(temp, "*", SearchOption.AllDirectories).Length == 0)
+                        Directory.Delete(temp);
+                }
+                catch (Exception) { }
             }
             this.installedmods.Remove(v.ParentMod.LongName);
             if (File.Exists(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "installed.json")))
@@ -606,6 +615,47 @@ namespace RiskOfDeath_ModManager
             sw.Flush();
             sw.Close();
             sw.Dispose();
+            CleanDependenies(v.Dependencies.ToArray());
+        }
+        private void CleanDependenies(params string[] dependencies)
+        {
+            foreach (string test in dependencies)
+            {
+                bool b = false;
+                UpdateModLists();
+                List<InstalledMod> mods = new List<InstalledMod>(this.InstalledDependencies);
+                mods.AddRange(this.InstalledMods);
+                foreach (InstalledMod m in mods)
+                {
+                    if (b)
+                        break;
+                    b |= m.Version.Dependencies.Contains(test);
+                }
+                if (!b)
+                    Uninstall(test);
+            }
+
+            /*UpdateModLists();
+            List<InstalledMod> temp = new List<InstalledMod>(this.InstalledDependencies);
+            temp.AddRange(this.InstalledMods);
+            foreach (InstalledMod m in temp)
+            {
+                if (m.LongName == this.bep.LongName) continue;
+                if (m.LongName == this.r2api.LongName) continue;
+                bool t = false;
+                List<InstalledMod> checktemp = new List<InstalledMod>(temp);
+                checktemp.Remove(m);
+                foreach (InstalledMod im in checktemp)
+                {
+                    if (t) break;
+                    t |= im.Version.Dependencies.Contains(m.Version.DependencyString);
+                }
+                if (!t)
+                {
+                    Uninstall(m.Version.DependencyString);
+                    return;
+                }
+            }*/
         }
         public void UpdateMod(string dependencyString)
         {
@@ -627,6 +677,7 @@ namespace RiskOfDeath_ModManager
             }
         }
 
+        [DebuggerStepThrough]
         public void UpdateModLists()
         {
             this.AvailableMods = new List<MiniMod>();
@@ -641,6 +692,10 @@ namespace RiskOfDeath_ModManager
                 if (this.installedmods.ContainsKey(m.LongName))
                 {
                     Version v = FindMod(string.Format("{0}-{1}", m.LongName, this.installedmods[m.LongName].VersionNumber));
+                    if (this.InstalledDependencies.Find((x) => x.Version.DependencyString == v.DependencyString) != null)
+                        continue;
+                    /*if (this.InstalledDependencies.Contains(new InstalledMod(v.ParentMod, v)))
+                        continue;*/
                     this.InstalledMods.Add(new InstalledMod(v.ParentMod, v));
                     foreach (string dep in v.Dependencies)
                     {
@@ -809,6 +864,11 @@ namespace RiskOfDeath_ModManager
                 t |= v.IsNewer(this.Version.VersionNumber);
             }
             return !t;
+        }
+
+        public new string ToString()
+        {
+            return this.Version.DependencyString;
         }
     }
 

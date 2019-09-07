@@ -8,7 +8,7 @@
 - This currently only works with BepInEx mods. Support for the SeikoML mods is planned, thanks to yoshisman8 - SeikoML Compat Layer (though this feature is on the back burner)
 
 # How to use
-This is a simple mod manager, with very simple steps, like the download button and uninstall button for mods
+This is a simple mod manager, with very simple steps, like the download button and uninstall button for mods. All dependencies are taken care of automatically!
 
 If you want to use the 'Install with Mod Manager' button on thunderstore.io, that's been made simple! From within Risk of Death, click the 'Options' button at the top, then click the 'Link Manager Protocol' button. This will prompt you for administrator priveleges, as writing the data for the protocol requires accessing restricted areas of the Windows Registry. Allow administrator rights, and a command window will pop up for a moment. After that window closes, you're ready to use the Mod Manager button on thunderstore!
 
@@ -34,14 +34,12 @@ When you click the "For Mod Devs" button, it will open a form that starts with t
   - managed -> RoR2_data/managed folder
 
 # Future update plans
-- Main priority work currently will be fixing the listing of the mods, making the uninstallation system, and backing up any files that would get overwritten
 - Style work
 - Keeping up with any special case mods that surface
 - Next major version (V3.0.0) will (likely) be the update to include mod profiles
 
 # Current Issues
-- List of installed mods is not currently persistent (WILL BE FIXED SOON)
-- No uninstallation functionality currently (WILL BE FIXED SOON)
+- Stupidly slow download for any mods over about 10MB (about 0.5MB/s download speed)
 
 # Changlog
 - 1.0.0 -> Initial release
@@ -50,3 +48,4 @@ When you click the "For Mod Devs" button, it will open a form that starts with t
 - 2.0.0 -> Implemented Uninstall and Update functionality, as well as update check for application
 - 2.1.0 -> Implemmented "Install with Mod Manager" url protocol for downloading directly from thunderstore.io
 - 2.1.1 -> Added How To Use section to readme
+- 2.1.2 -> Fixed dependencies listing to not list dependencies under Installed Mods, Uninstalls dependencies when all mods depending on them are uninstalled, Removes folders created for mods when uninstalling
