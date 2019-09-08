@@ -25,7 +25,7 @@ namespace RiskOfDeath_ModManager
         public Mod R2API { get { return this.r2api; } }
         public const string THIS_UUID = "ab3e2616-672f-4791-91a9-a09647d7f26d";
         public Mod THIS_MOD { get; private set; }
-        public readonly string THIS_VN = "2.2.0";
+        public readonly string THIS_VN = "2.2.1";
         public RuleSet Rules { get; private set; }
         private Dictionary<string, MappedInstalledMod> installedmods = new Dictionary<string, MappedInstalledMod>();
         private readonly string ror2;
@@ -103,6 +103,7 @@ namespace RiskOfDeath_ModManager
             sw.Close();
             sw.Dispose();
         }*/
+        [DebuggerStepThrough]
         private void DeserializeMods(string json)
         {
             List<ModJson> temp = JsonConvert.DeserializeObject<List<ModJson>>(json);
@@ -650,17 +651,35 @@ namespace RiskOfDeath_ModManager
             }
         }
 
-        [DebuggerStepThrough]
+        //[DebuggerStepThrough]
         public void UpdateModLists()
         {
             this.AvailableMods = new List<MiniMod>();
             this.InstalledMods = new List<InstalledMod>();
             List<InstalledMod> tempAvail = new List<InstalledMod>();
-            List<InstalledMod> tempDep = new List<InstalledMod>
-            {
+            List<InstalledMod> tempDep = new List<InstalledMod>();
+            /*{
                 new InstalledMod(this.bep,   FindMod(string.Format("{0}-{1}", this.bep.LongName,   this.installedmods[this.bep.LongName].VersionNumber))),
                 new InstalledMod(this.r2api, FindMod(string.Format("{0}-{1}", this.r2api.LongName, this.installedmods[this.r2api.LongName].VersionNumber)))
-            };
+            };*/
+
+            try
+            {
+                tempDep.Add(new InstalledMod(this.bep, FindMod(string.Format("{0}-{1}", this.bep.LongName, this.installedmods[this.bep.LongName].VersionNumber))));
+            }
+            catch (Exception)
+            {
+                tempDep.Add(new InstalledMod(this.bep, this.bep.GetLatestVersion()));
+            }
+            try
+            {
+                tempDep.Add(new InstalledMod(this.r2api, FindMod(string.Format("{0}-{1}", this.r2api.LongName, this.installedmods[this.r2api.LongName].VersionNumber))));
+            }
+            catch (Exception)
+            {
+                tempDep.Add(new InstalledMod(this.r2api, this.r2api.GetLatestVersion()));
+            }
+
             foreach (Mod m in this.mods)
             {
                 if (this.installedmods.ContainsKey(m.LongName))

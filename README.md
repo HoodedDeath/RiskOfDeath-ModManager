@@ -55,3 +55,4 @@ When you click the "For Mod Devs" button, it will open a form that starts with t
 - 2.1.1 -> Added How To Use section to readme
 - 2.1.2 -> Fixed dependencies listing to not list dependencies under Installed Mods, Uninstalls dependencies when all mods depending on them are uninstalled, Removes folders created for mods when uninstalling
 - 2.2.0 -> Update code in preparation for upcoming V3 update. Added updater sister program for automating RoD updates
+- 2.2.1 -> Fixed large oversight in version checking changes in V2.2.0

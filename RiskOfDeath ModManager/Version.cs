@@ -125,7 +125,7 @@ namespace RiskOfDeath_ModManager
                 return true;
             if (this.Revision > vn.Revision)
                 return false;
-            return true;
+            return false;
         }
         /// <summary>
         /// Tests if this VersionNumber is older than the given VersionNumber
