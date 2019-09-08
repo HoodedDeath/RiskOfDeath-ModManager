@@ -121,7 +121,9 @@ namespace RiskOfDeath_ModManager
         private void HelpToolStripMenuItem_Click(object sender, EventArgs e)
         {
             string s = "This form will allow you to easily write custom rules for how your mod should be installed.\n\nMod Folder: The folder inside the compressed file of your mod. All contents of this folder will be copied to the folder inside Risk of Rain 2 or BepInEx directory given in Game Folder.\n\nGame Folder: The folder inside which the contents of Mod Folder will be copied to.\n\nValid folders and corresponding path:\n\t- BepInEx - <RoR2 installation>/BepInEx - Works well if your folder contains the same folder structure as the BepInEx folder\n\t- plugins - <RoR2 installation>/BepInEx/plugins - the plugins folder inside BepInEx, where most mod files need to go\n\t- patchers - <RoR2 installation>/BepInEx/patchers - These are more advanced types of plugins that need to access Mono.Cecil to edit .dll files during runtime\n\t- monomod - <RoR2 installation>/BepInEx/monomod - MonoMod patches get placed in here\n\t- core -<RoR2 installation>/BepInEx/core - Core BepInEx .dll files. Your mod likely does not need to go here\n\t- data - <RoR2 installation>/Risk of Rain 2_Data - For some asset replacement mods\n\t- language - <RoR2 installation>/Risk of Rain 2_Data/Language - Language text files for replacing text in the game\n\t- EN-US - <RoR2 installation>/Risk of Rain 2_Data/Language/en - Text replacement for English\n\t- managed - <RoR2 installation>/Risk of Rain 2_Data/Managed\n\n!! Note !!\nIf you're going to declare custom rules for your mod, please make sure all the folders in the base directory of your mod have rules and there are no loose files in the base directory that are needed for the mod. The rules you declare will cause the download routine to only act on folders given in your rules.\n\n!! When you don't need to worry about any of this !!\n\t- When your mod's compressed file contains the dll files for your mod with no subfolders, these dll files will be assumed to belong in BepInEx/plugins\n\t- When your compressed file contains only folders following the folder structure in either BepInEx or Risk of Rain 2_Data (example: when your file contains only folders like \"Risk of Rain 2_Data\", \"BepInEx\", \"plugins\", etc.)\n\t- When your compressed file contains a folder (name of this folder does not matter) which contains either just dll files that belong in BepInEx/plugins, or a folder named the same as a folder in the BepInEx folder";
-            new MessageForm().Show(s, "Mod rules help");
+            var form = new MessageForm();
+            form.Show(s, "Mod rules help");
+            form.Dispose();
         }
     }
     public class PerModGrouping : GroupBox
@@ -144,9 +146,7 @@ namespace RiskOfDeath_ModManager
         private void InitializeComponent()
         {
             this.SuspendLayout();
-            // 
             // modLabel
-            // 
             this.modLabel.AutoSize = true;
             this.modLabel.Font = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Regular, GraphicsUnit.Point, 0);
             this.modLabel.Location = new Point(6, 22);
@@ -154,23 +154,17 @@ namespace RiskOfDeath_ModManager
             this.modLabel.Size = new Size(63, 13);
             this.modLabel.TabIndex = 0;
             this.modLabel.Text = "Mod Folder:";
-            // 
             // modTextBox
-            // 
             this.modTextBox.Location = new Point(75, 19);
             this.modTextBox.Name = "modTextBox";
             this.modTextBox.Size = new Size(100, 20);
             this.modTextBox.TabIndex = 3;
-            // 
             // gameTextBox
-            // 
             this.gameTextBox.Location = new Point(257, 19);
             this.gameTextBox.Name = "gameTextBox";
             this.gameTextBox.Size = new Size(100, 20);
             this.gameTextBox.TabIndex = 5;
-            // 
             // gameLabel
-            // 
             this.gameLabel.AutoSize = true;
             this.gameLabel.Font = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Regular, GraphicsUnit.Point, 0);
             this.gameLabel.Location = new Point(181, 22);
@@ -178,9 +172,7 @@ namespace RiskOfDeath_ModManager
             this.gameLabel.Size = new Size(70, 13);
             this.gameLabel.TabIndex = 4;
             this.gameLabel.Text = "Game Folder:";
-            // 
             // groupBox1
-            // 
             this.Controls.Add(this.gameTextBox);
             this.Controls.Add(this.modLabel);
             this.Controls.Add(this.gameLabel);

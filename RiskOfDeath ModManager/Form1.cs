@@ -11,7 +11,6 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.Win32;
-using Newtonsoft.Json;
 using HoodedDeathHelperLibrary;
 using System.Reflection;
 using System.Threading;
@@ -24,7 +23,6 @@ namespace RiskOfDeath_ModManager
         private readonly ModContainer _mods;
         private readonly string _ror2Path = "";
         private readonly bool _hd = false;
-        public readonly ModContainer AllMods;
 
         public Form1(string ror2Path, bool nolaunch, bool hd, bool startWithDownload)
         {
@@ -35,7 +33,6 @@ namespace RiskOfDeath_ModManager
                 this._ror2Path = ror2Path;
             InitializeComponent();
             this._mods = LoadPackages();
-            //this._mods.UpdateModLists();
             string p = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "uritemp");
             if (startWithDownload && File.Exists(p))
             {
@@ -48,13 +45,28 @@ namespace RiskOfDeath_ModManager
             }
             else
                 ListPackages();
-            groupBox1.Text = Helper.Truncate(groupBox1.Text, 30);
             Console.WriteLine("Done loading.");
-            //
-            AllMods = _mods;
-            //
+            if (this._mods.THIS_MOD.GetLatestVersion().VersionNumber.IsNewer(this._mods.THIS_VN))
+            {
+                DialogResult res = MessageBox.Show("There's a new version of Risk of Death available. Would you like to update the app now?", "Update now?", MessageBoxButtons.YesNo);
+                if (res == DialogResult.Yes)
+                {
+                    //Install update
+                    UpdateRoD(null, null);
+                }
+                else
+                {
+                    ToolStripMenuItem item = new ToolStripMenuItem
+                    {
+                        Name = "updateMeToolStripMenuItem",
+                        AutoSize = true,
+                        Text = "Update RoD"
+                    };
+                    item.Click += new EventHandler(this.UpdateRoD);
+                    this.menuStrip1.Items.Add(item);
+                }
+            }
             WriteRoamingFiles();
-
             if (nolaunch)
             {
                 this.launchBtn.Enabled = false;
@@ -62,11 +74,19 @@ namespace RiskOfDeath_ModManager
             }
             protocolBackgroundWorker.RunWorkerAsync();
         }
+        private void UpdateRoD(object sender, EventArgs e)
+        {
+            //Call sister 'updater' program
+            string temp = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "updater", "RiskOfDeath Updater.exe");
+            Process.Start("explorer.exe", temp);
+            Application.Exit();
+            throw new CloseEverythingException();
+        }
         private void Form1_Closing(object sender, FormClosingEventArgs e)
         {
             protocolBackgroundWorker.CancelAsync();
             // --ONLY USE IF MODCONTAINER DOWNLOAD STARTS BREAKING--
-            //this.AllMods.Dispose();
+            //this._mods.Dispose();
         }
         //Makes sure the files in the HoodedDeath folder in the user's Roaming folder exist
         private void WriteRoamingFiles()
@@ -103,7 +123,7 @@ namespace RiskOfDeath_ModManager
                     sw.Dispose();
                 }
             }
-            catch (Exception e) { MessageBox.Show(e.Message); } //Shows a MessageBox about any exception was thrown
+            catch (Exception e) { Console.WriteLine("Failed to write roaming files:\n{0}{1}", e.Message, e.StackTrace); }
         }
         private ModContainer LoadPackages()
         {
@@ -135,40 +155,8 @@ namespace RiskOfDeath_ModManager
                 this.panel2.Controls.Add(new InstalledGrouping(m, this) { Location = new Point(iLocation[0], iLocation[1] += 90) });
 
             int[] dLocation = new int[] { 3, -16 };
-            List<string> temp = new List<string>();
-            foreach (InstalledMod im in this._mods.InstalledDependencies)
-                if (temp.Find((x) => x.Contains(im.LongName)) == null)
-                    temp.Add(im.Version.DependencyString);
-                else
-                {
-                    string s = im.LongName;
-                    string test = null;
-                    foreach (InstalledMod m in this._mods.InstalledDependencies)
-                    {
-                        if (test != null)
-                            break;
-                        if (m.LongName == s)
-                            test = m.LongName;
-                    }
-                    test = temp.Find((x) => x.Contains(test));
-                    if (im.Version.VersionNumber.IsNewer(this._mods.FindMod(test).VersionNumber))
-                    {
-                        temp.Remove(test);
-                        temp.Add(im.Version.DependencyString);
-                    }
-                }
-            //Label depLabel = new Label { AutoSize = true, Name = "depLabel", Size = new Size(153, 13), TabIndex = 10 };
-            foreach (string s in temp)
-                this.panel3.Controls.Add(new Label { AutoSize = true, Location = new Point(dLocation[0], dLocation[1] += 19), Text = s });
-
-            /*int[] location = new int[] { 3, -87 };
-            foreach (MiniMod m in mods.ToArray())
-                this.panel1.Controls.Add(new DownloadableGrouping(this, m) { Location = new Point(location[0], location[1] += 90) });*/
-        }
-
-        private void LinkLabel1_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
-        {
-            MessageBox.Show(descLinkLabel.Text);
+            foreach (InstalledMod m in this._mods.InstalledDependencies)
+                this.panel3.Controls.Add(new Label { AutoSize = true, Location = new Point(dLocation[0], dLocation[1] += 19), Text = m.Version.DependencyString, BackColor = SystemColors.Control });
         }
 
         private void LaunchBtn_Click(object sender, EventArgs e)
@@ -208,25 +196,6 @@ namespace RiskOfDeath_ModManager
             }
         }
 
-        //private readonly int[] loc = new int[] { 3, -87 };
-        /*public void MoveMe(DownloadableGrouping d)
-        {
-            //d.Location = new Point(loc[0], loc[1] += 90);
-            //this.panel2.Controls.Add(d);
-            this.panel1.Controls.Remove(d);
-            Version v = this._mods.FindMod(d.GetMod().Versions[d.VersionIndex()].DependencyString);
-            //InstalledMod i = new InstalledMod(v.ParentMod, v);
-            //InstalledGrouping g = new InstalledGrouping(i, this) { Location = new Point(loc[0], loc[1] += 90) };
-            this.panel2.AutoScrollPosition = new Point(0, 0);
-            this.panel2.Controls.Add(new InstalledGrouping(new InstalledMod(v.ParentMod, v), this) { Location = new Point(loc[0], loc[1] += 90) });
-
-        }
-
-        public void UninstallMe(InstalledGrouping inst)
-        {
-
-        }*/
-
         public void Install(string dependencyString)
         {
             this._mods.Download(dependencyString);
@@ -255,27 +224,6 @@ namespace RiskOfDeath_ModManager
                 sw.Close();
                 sw.Dispose();
                 Process.Start(Path.Combine(Path.GetDirectoryName(p), "RiskOfDeath SetUrlProtocol.exe"));
-                //string s = (string)Registry.GetValue("HKEY_CLASSES_ROOT\\ror2mm", null, "");
-                //if (s == null || s == "")
-                //{
-                    /*Registry.SetValue("HKEY_CLASSES_ROOT\\ror2mm", null, "URL:ror2mm protocol");
-                    Registry.SetValue("HKEY_CLASSES_ROOT\\ror2mm", "URL Protocol", null);
-                    Registry.SetValue("HKEY_CLASSES_ROOT\\ror2mm\\Shell\\Open\\Command", null, "\"H:\\VisualStudio\\RiskOfDeath ModManager\\RiskOfDeath ModManager\\bin\\Debug\\RiskOfDeath ModManager.exe\" -- \"%1\"");*/
-                //}
-
-                /*Process cmd = new Process();
-                cmd.StartInfo.FileName = "cmd.exe";
-                cmd.StartInfo.RedirectStandardInput = true;
-                cmd.StartInfo.RedirectStandardOutput = true;
-                cmd.StartInfo.CreateNoWindow = true;
-                cmd.StartInfo.UseShellExecute = false;
-                cmd.Start();
-
-                cmd.StandardInput.WriteLine("echo Oscar");
-                cmd.StandardInput.Flush();
-                cmd.StandardInput.Close();
-                cmd.WaitForExit();
-                Console.WriteLine(cmd.StandardOutput.ReadToEnd());*/
             }
         }
 
@@ -318,6 +266,13 @@ namespace RiskOfDeath_ModManager
                 File.Delete(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "uritemp"));
                 protocolBackgroundWorker.RunWorkerAsync();
             }
+        }
+
+        private void UpdateBepInExR2APIToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            this._mods.UpdateMod(this._mods.BEP.GetLatestVersion().DependencyString);
+            this._mods.UpdateMod(this._mods.R2API.GetLatestVersion().DependencyString);
+            ListPackages();
         }
     }
     public class DownloadableGrouping : GroupBox
@@ -444,6 +399,7 @@ namespace RiskOfDeath_ModManager
             this.downloadBtn.UseVisualStyleBackColor = true;
             this.downloadBtn.Click += new EventHandler(this.DownloadBtn_Click);
             // GroupBox
+            this.BackColor = SystemColors.Control;
             this.Font = new Font("Microsoft Sans Serif", 11.25F, FontStyle.Regular, GraphicsUnit.Point, ((byte)(0)));
             this.Name = "groupBox1";
             this.Size = new Size(314, 85);
@@ -462,7 +418,6 @@ namespace RiskOfDeath_ModManager
             if (this.mod.IsDeprecated)
                 this.downloadBtn.BackColor = Color.Red;
         }
-
         private readonly ToolTip tip = new ToolTip();
         private void DescLink_MouseHover(object sender, EventArgs e)
         {
@@ -477,23 +432,9 @@ namespace RiskOfDeath_ModManager
             string s = string.Format("Name: {0}\nAuthor: {1}\nVersion:{2}\nDescription: {3}", this.mod.Name, this.mod.Owner, this.mod.Versions[0].VersionNumber, this.mod.Versions[0].Description);
             MessageBox.Show(s);
         }
-        //Change to download through ModContainer instance in Form1
         private void DownloadBtn_Click(object sender, EventArgs e)
         {
             this.parent.Install(this.mod.Versions[this.verComboBox.SelectedIndex].DependencyString);
-            /*this.parent.AllMods.Download(this.mod.Versions[this.verComboBox.SelectedIndex].DependencyString);
-            this.parent.MoveMe(this);*/
-            //this.Dispose();
-            /*
-            Console.WriteLine(string.Format("Downloading: {0}-{1}-{2} ...", this.mod.Owner, this.mod.Name, this.mod.Versions[this.verComboBox.SelectedIndex].VersionNumber));
-            using (var client = new WebClient())
-            {
-                string s = string.Format("{0}-{1}-{2}.", this.mod.Owner, this.mod.Name, this.mod.Versions[this.verComboBox.SelectedIndex].VersionNumber);
-                client.DownloadFile(this.mod.Versions[this.verComboBox.SelectedIndex].DownloadUrl, s + "tmp");
-                File.Move(s + "tmp", "downloads\\" + s + "zip");
-            }
-            Console.WriteLine("done");
-            */
         }
         private void VersionChanged(object sender, EventArgs e)
         {
@@ -524,7 +465,6 @@ namespace RiskOfDeath_ModManager
             this.parent = p;
             InitializeComponent();
         }
-
         private void InitializeComponent()
         {
             this.uninstallBtn = new Button();
@@ -609,9 +549,7 @@ namespace RiskOfDeath_ModManager
             this.versionLinkLabel.ActiveLinkColor = SystemColors.ControlText;
             this.versionLinkLabel.AutoSize = true;
             this.versionLinkLabel.Font = new Font("Microsoft Sans Serif", 8F);
-            //this.versionLinkLabel.LinkBehavior = LinkBehavior.HoverUnderline;
             this.versionLinkLabel.LinkBehavior = temp ? LinkBehavior.HoverUnderline : LinkBehavior.NeverUnderline;
-            //this.versionLinkLabel.LinkColor = SystemColors.ControlText;
             this.versionLinkLabel.LinkColor = temp ? Color.FromArgb(255, 0, 0) : SystemColors.ControlText;
             this.versionLinkLabel.Location = new Point(123, 55);
             this.versionLinkLabel.Name = "versionLinkLabel";
@@ -622,6 +560,7 @@ namespace RiskOfDeath_ModManager
             this.versionLinkLabel.VisitedLinkColor = SystemColors.ControlText;
             this.versionLinkLabel.LinkClicked += new LinkLabelLinkClickedEventHandler(this.VersionLink_Click);
             //
+            this.BackColor = SystemColors.Control;
             this.Font = new Font("Microsoft Sans Serif", 11.25F, FontStyle.Regular, GraphicsUnit.Point, 0);
             this.Location = new Point(704, 465);
             this.Name = "groupBox1";
@@ -629,8 +568,6 @@ namespace RiskOfDeath_ModManager
             this.TabIndex = 2;
             this.TabStop = false;
             this.Text = Helper.Truncate(this.mod.Name ?? "#INSTALLED_GROUPING#", 30);
-            /*try { this.Text = Helper.Truncate(this.mod.Name, 30); }
-            catch (NullReferenceException) { this.Text = Helper.Truncate("#INSTALLED_GROUPING#", 30); }*/
             this.Visible = true;
             this.Controls.Add(this.versionLinkLabel);
             this.Controls.Add(this.uninstallBtn);
@@ -643,13 +580,10 @@ namespace RiskOfDeath_ModManager
             this.ResumeLayout(false);
             this.PerformLayout();
         }
-
         private void UninstallBtn_Click(object sender, EventArgs e)
         {
-            //parent.UninstallMe(this);
             parent.Uninstall(this.mod.Version.DependencyString);
         }
-
         private void VersionLink_Click(object sender, LinkLabelLinkClickedEventArgs e)
         {
             parent.Update(this.mod.Version.DependencyString);

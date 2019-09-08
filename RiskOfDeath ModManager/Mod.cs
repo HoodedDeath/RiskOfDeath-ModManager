@@ -19,14 +19,16 @@ namespace RiskOfDeath_ModManager
         private readonly List<Mod> mods = new List<Mod>();
         private string BEP_UUID => "4c253b36-fd0b-4e6d-b4d8-b227972af4da";
         private Mod bep;
+        public Mod BEP { get { return this.bep; } }
         private string R2API_UUID => "75541a7e-8bfc-4585-a842-5dbf1aae5b3d";
         private Mod r2api;
-        private string THIS_UUID => "ab3e2616-672f-4791-91a9-a09647d7f26d";
-        private Mod this_mod;
-        private string this_vn = "2.1.2";
+        public Mod R2API { get { return this.r2api; } }
+        public const string THIS_UUID = "ab3e2616-672f-4791-91a9-a09647d7f26d";
+        public Mod THIS_MOD { get; private set; }
+        public readonly string THIS_VN = "2.2.0";
         public RuleSet Rules { get; private set; }
         private Dictionary<string, MappedInstalledMod> installedmods = new Dictionary<string, MappedInstalledMod>();
-        private string ror2;
+        private readonly string ror2;
 
         /// <summary>
         /// Do not call without calling UpdateModLists first
@@ -39,7 +41,7 @@ namespace RiskOfDeath_ModManager
         /// <summary>
         /// Do not call without calling UpdateModLists first
         /// </summary>
-        public List<InstalledMod> InstalledDependencies { get; private set; } = new List<InstalledMod>(); //CHANGE TO A DEPENDANCY CLASS OF SOME TYPE
+        public List<InstalledMod> InstalledDependencies { get; private set; } = new List<InstalledMod>();
 
         public ModContainer(string jsonFromThunderStore, string ror2Path)
         {
@@ -77,17 +79,16 @@ namespace RiskOfDeath_ModManager
                 sr.Close();
                 sr.Dispose();
             }
-            catch (FileNotFoundException) { Console.WriteLine("RuleSet file cannot be found. Downloads may not function."); MessageBox.Show("RuleSet file cannot be found. Downloads may not function."); }
+            catch (FileNotFoundException) { Console.WriteLine("RuleSet file cannot be found. Downloads may not function."); MessageBox.Show("RuleSet file cannot be found. Downloads may not function properly."); }
             catch (Exception e) { Console.WriteLine(e.Message + e.StackTrace); new MessageForm().Show(e.Message + e.StackTrace, "An error occurred while loading RuleSet"); }
             DeserializeMods(jsonFromThunderStore);
-            if (this.this_mod.GetLatestVersion().VersionNumber.IsNewer(this.this_vn) && MessageBox.Show("There's a new version of Risk of Death available. Would you like to open Thunderstore to download the latest version?", "Update?", MessageBoxButtons.YesNo) == DialogResult.Yes)
-            { Process.Start("explorer.exe", "https://thunderstore.io/package/HoodedDeath/RiskOfDeathModManager/"); throw new CloseEverythingException(); }
+            /*if (this.THIS_MOD.GetLatestVersion().VersionNumber.IsNewer(THIS_VN) && MessageBox.Show("There's a new version of Risk of Death available. Would you like to open Thunderstore to download the latest version?", "Update?", MessageBoxButtons.YesNo) == DialogResult.Yes)
+            { Process.Start("explorer.exe", "https://thunderstore.io/package/HoodedDeath/RiskOfDeathModManager/"); throw new CloseEverythingException(); }*/
             if (!CheckBepWithR2API(ror2Path))
             {
                 Console.WriteLine("BepInEx/R2API not installed/invalid. Beginning download of latest version.");
                 MessageBox.Show("BepInEx not installed/invalid. Will be downloaded and installed.");
                 //Download BepInEx and R2API
-                //Download(this.bep.Versions[0].LongName, this.r2api.Versions[0].LongName);
                 Download(this.bep.GetLatestVersion().LongName, this.r2api.GetLatestVersion().LongName);
                 Console.WriteLine("Done downloading BepInEx and R2API.");
             }
@@ -107,7 +108,7 @@ namespace RiskOfDeath_ModManager
             List<ModJson> temp = JsonConvert.DeserializeObject<List<ModJson>>(json);
             foreach (ModJson mj in temp)
                 if (mj.uuid4 == THIS_UUID)
-                    this.this_mod = new Mod(mj);
+                    this.THIS_MOD = new Mod(mj);
                 else if (mj.uuid4 == BEP_UUID)
                     this.bep = new Mod(mj);
                 else if (mj.uuid4 == R2API_UUID)
@@ -118,55 +119,55 @@ namespace RiskOfDeath_ModManager
         private bool CheckBepWithR2API(string instPath)
         {
             //Check BepInEx
-            string bep = System.IO.Path.Combine(instPath, "BepInEx");
-            if (!File.Exists(System.IO.Path.Combine(instPath, "doorstop_config.ini"))) return false;
-            if (!File.Exists(System.IO.Path.Combine(instPath, "winhttp.dll"))) return false;
+            string bep = Path.Combine(instPath, "BepInEx");
+            if (!File.Exists(Path.Combine(instPath, "doorstop_config.ini"))) return false;
+            if (!File.Exists(Path.Combine(instPath, "winhttp.dll"))) return false;
             if (!Directory.Exists(bep)) return false;
             //Check config
-            string config = System.IO.Path.Combine(bep, "config");
+            string config = Path.Combine(bep, "config");
             if (!Directory.Exists(config)) return false;
-            if (!File.Exists(System.IO.Path.Combine(config, "BepInEx.cfg"))) return false;
-            if (!File.Exists(System.IO.Path.Combine(config, "com.bepis.r2api.cfg"))) return false;
+            if (!File.Exists(Path.Combine(config, "BepInEx.cfg"))) return false;
+            if (!File.Exists(Path.Combine(config, "com.bepis.r2api.cfg"))) return false;
             //Check core
-            string core = System.IO.Path.Combine(bep, "core");
+            string core = Path.Combine(bep, "core");
             if (!Directory.Exists(core)) return false;
-            if (!File.Exists(System.IO.Path.Combine(core, "0Harmony.dll"))) return false;
-            if (!File.Exists(System.IO.Path.Combine(core, "BepInEx.dll"))) return false;
-            if (!File.Exists(System.IO.Path.Combine(core, "BepInEx.Harmony.dll"))) return false;
-            if (!File.Exists(System.IO.Path.Combine(core, "BepInEx.Preloader.dll"))) return false;
-            if (!File.Exists(System.IO.Path.Combine(core, "Mono.Cecil.dll"))) return false;
-            if (!File.Exists(System.IO.Path.Combine(core, "MonoMod.RuntimeDetour.dll"))) return false;
-            if (!File.Exists(System.IO.Path.Combine(core, "MonoMod.Utils.dll"))) return false;
-            if (!File.Exists(System.IO.Path.Combine(core, "0Harmony.xml"))) return false;
-            if (!File.Exists(System.IO.Path.Combine(core, "BepInEx.Harmony.xml"))) return false;
-            if (!File.Exists(System.IO.Path.Combine(core, "BepInEx.Preloader.xml"))) return false;
-            if (!File.Exists(System.IO.Path.Combine(core, "BepInEx.xml"))) return false;
-            if (!File.Exists(System.IO.Path.Combine(core, "MonoMod.RuntimeDetour.xml"))) return false;
-            if (!File.Exists(System.IO.Path.Combine(core, "MonoMod.Utils.xml"))) return false;
+            if (!File.Exists(Path.Combine(core, "0Harmony.dll"))) return false;
+            if (!File.Exists(Path.Combine(core, "BepInEx.dll"))) return false;
+            if (!File.Exists(Path.Combine(core, "BepInEx.Harmony.dll"))) return false;
+            if (!File.Exists(Path.Combine(core, "BepInEx.Preloader.dll"))) return false;
+            if (!File.Exists(Path.Combine(core, "Mono.Cecil.dll"))) return false;
+            if (!File.Exists(Path.Combine(core, "MonoMod.RuntimeDetour.dll"))) return false;
+            if (!File.Exists(Path.Combine(core, "MonoMod.Utils.dll"))) return false;
+            if (!File.Exists(Path.Combine(core, "0Harmony.xml"))) return false;
+            if (!File.Exists(Path.Combine(core, "BepInEx.Harmony.xml"))) return false;
+            if (!File.Exists(Path.Combine(core, "BepInEx.Preloader.xml"))) return false;
+            if (!File.Exists(Path.Combine(core, "BepInEx.xml"))) return false;
+            if (!File.Exists(Path.Combine(core, "MonoMod.RuntimeDetour.xml"))) return false;
+            if (!File.Exists(Path.Combine(core, "MonoMod.Utils.xml"))) return false;
             //Check monomod
-            string monomod = System.IO.Path.Combine(bep, "monomod");
+            string monomod = Path.Combine(bep, "monomod");
             if (!Directory.Exists(monomod)) return false;
-            if (!File.Exists(System.IO.Path.Combine(monomod, "Assembly-CSharp.R2API.mm.dll"))) return false;
+            if (!File.Exists(Path.Combine(monomod, "Assembly-CSharp.R2API.mm.dll"))) return false;
             //Check patchers
-            string patchers = System.IO.Path.Combine(bep, "patchers");
+            string patchers = Path.Combine(bep, "patchers");
             if (!Directory.Exists(patchers)) return false;
             //Check BepInEx.MonoMod.Loader within pathers
-            string monomodloader = System.IO.Path.Combine(patchers, "BepInEx.MonoMod.Loader");
+            string monomodloader = Path.Combine(patchers, "BepInEx.MonoMod.Loader");
             if (!Directory.Exists(monomodloader)) return false;
-            if (!File.Exists(System.IO.Path.Combine(monomodloader, "MonoMod.exe"))) return false;
-            if (!File.Exists(System.IO.Path.Combine(monomodloader, "BepInEx.MonoMod.Loader.dll"))) return false;
-            if (!File.Exists(System.IO.Path.Combine(monomodloader, "Mono.Cecil.Mdb.dll"))) return false;
-            if (!File.Exists(System.IO.Path.Combine(monomodloader, "Mono.Cecil.Pdb.dll"))) return false;
-            if (!File.Exists(System.IO.Path.Combine(monomodloader, "Mono.Cecil.Rocks.dll"))) return false;
-            if (!File.Exists(System.IO.Path.Combine(monomodloader, "BepInEx.MonoMod.Loader.pdb"))) return false;
+            if (!File.Exists(Path.Combine(monomodloader, "MonoMod.exe"))) return false;
+            if (!File.Exists(Path.Combine(monomodloader, "BepInEx.MonoMod.Loader.dll"))) return false;
+            if (!File.Exists(Path.Combine(monomodloader, "Mono.Cecil.Mdb.dll"))) return false;
+            if (!File.Exists(Path.Combine(monomodloader, "Mono.Cecil.Pdb.dll"))) return false;
+            if (!File.Exists(Path.Combine(monomodloader, "Mono.Cecil.Rocks.dll"))) return false;
+            if (!File.Exists(Path.Combine(monomodloader, "BepInEx.MonoMod.Loader.pdb"))) return false;
             //Check plugins
-            string plugins = System.IO.Path.Combine(bep, "plugins");
+            string plugins = Path.Combine(bep, "plugins");
             if (!Directory.Exists(plugins)) return false;
             //Check R2API withing plugins
-            string r2api = System.IO.Path.Combine(plugins, this.r2api.GetLatestVersion().DependencyString, "R2API");
+            string r2api = Path.Combine(plugins, this.r2api.GetLatestVersion().DependencyString, "R2API");
             if (!Directory.Exists(r2api)) return false;
-            if (!File.Exists(System.IO.Path.Combine(r2api, "MMHOOK_Assembly-CSharp.dll"))) return false;
-            if (!File.Exists(System.IO.Path.Combine(r2api, "R2API.dll"))) return false;
+            if (!File.Exists(Path.Combine(r2api, "MMHOOK_Assembly-CSharp.dll"))) return false;
+            if (!File.Exists(Path.Combine(r2api, "R2API.dll"))) return false;
             //If nothing failed, BepInEx is installed correctly
             return true;
         }
@@ -200,11 +201,6 @@ namespace RiskOfDeath_ModManager
         {
             Download(dependencyString, true);
         }
-        //Needs to download dependencies
-        //Needs to save what mods are installed
-        //possibly needs to handle updates
-
-        //when installing - if there's folders  instead of just dll's, copy contents into subfolders in corrosponding folders (example: contents of plugins for R2API goes to /BepInEx/plugins/<DependencyString>/ )
         public void Download(string dependencyString, bool backupOnOverwrite)
         {
             //Get version from dependency string
@@ -234,6 +230,8 @@ namespace RiskOfDeath_ModManager
             }
             //Extract package
             Console.WriteLine("Extracting {0} ...", v.DependencyString);
+            if (Directory.Exists(path))
+                Helper.DeleteDirectory(path);
             ZipFile.ExtractToDirectory(path + ".zip", path);
             string workingdir = path;
             //Files to not worry about copying
@@ -334,7 +332,7 @@ namespace RiskOfDeath_ModManager
                     if (sc.PickOneOfX)
                     {
                         foreach (KeyValuePair<string, string[]> kvp in sc.PickOptions)
-                            ignore.Add(Path.Combine(workingdir, kvp.Value[0]).ToLower()); // files.Remove(Path.Combine(workingdir, kvp.Value[0]));
+                            ignore.Add(Path.Combine(workingdir, kvp.Value[0]).ToLower());
                         KeyValuePair<string, string[]> k;
                         using (var form = new PickForm(v.ParentMod.LongName, sc.PickOptions))
                         {
@@ -571,11 +569,8 @@ namespace RiskOfDeath_ModManager
 
                 }
             }
-            //Directory.Delete(workingdir);
             Helper.DeleteDirectory(workingdir);
-
             //
-            //don't forget all folders not covered in ruleset get their contents copied into BepInEx\plugins
             //SeikoML should be replaced by SeikoMLCompatLayer
             MappedInstalledMod map = new MappedInstalledMod() { VersionNumber = v.VersionNumber.ToString(), Files = fileList.ToArray() };
             this.installedmods.Add(v.ParentMod.LongName, map);
@@ -634,28 +629,6 @@ namespace RiskOfDeath_ModManager
                 if (!b)
                     Uninstall(test);
             }
-
-            /*UpdateModLists();
-            List<InstalledMod> temp = new List<InstalledMod>(this.InstalledDependencies);
-            temp.AddRange(this.InstalledMods);
-            foreach (InstalledMod m in temp)
-            {
-                if (m.LongName == this.bep.LongName) continue;
-                if (m.LongName == this.r2api.LongName) continue;
-                bool t = false;
-                List<InstalledMod> checktemp = new List<InstalledMod>(temp);
-                checktemp.Remove(m);
-                foreach (InstalledMod im in checktemp)
-                {
-                    if (t) break;
-                    t |= im.Version.Dependencies.Contains(m.Version.DependencyString);
-                }
-                if (!t)
-                {
-                    Uninstall(m.Version.DependencyString);
-                    return;
-                }
-            }*/
         }
         public void UpdateMod(string dependencyString)
         {
@@ -682,49 +655,41 @@ namespace RiskOfDeath_ModManager
         {
             this.AvailableMods = new List<MiniMod>();
             this.InstalledMods = new List<InstalledMod>();
-            this.InstalledDependencies = new List<InstalledMod>
+            List<InstalledMod> tempAvail = new List<InstalledMod>();
+            List<InstalledMod> tempDep = new List<InstalledMod>
             {
-                new InstalledMod(this.bep, this.bep.GetLatestVersion()),
-                new InstalledMod(this.r2api, this.r2api.GetLatestVersion())
+                new InstalledMod(this.bep,   FindMod(string.Format("{0}-{1}", this.bep.LongName,   this.installedmods[this.bep.LongName].VersionNumber))),
+                new InstalledMod(this.r2api, FindMod(string.Format("{0}-{1}", this.r2api.LongName, this.installedmods[this.r2api.LongName].VersionNumber)))
             };
             foreach (Mod m in this.mods)
             {
                 if (this.installedmods.ContainsKey(m.LongName))
                 {
                     Version v = FindMod(string.Format("{0}-{1}", m.LongName, this.installedmods[m.LongName].VersionNumber));
-                    if (this.InstalledDependencies.Find((x) => x.Version.DependencyString == v.DependencyString) != null)
-                        continue;
-                    /*if (this.InstalledDependencies.Contains(new InstalledMod(v.ParentMod, v)))
-                        continue;*/
-                    this.InstalledMods.Add(new InstalledMod(v.ParentMod, v));
-                    foreach (string dep in v.Dependencies)
+                    tempAvail.Add(new InstalledMod(m, v));
+                    foreach (string s in v.Dependencies)
                     {
-                        v = FindMod(dep);
-                        if (!this.InstalledDependencies.Contains(new InstalledMod(v.ParentMod, v)))
-                            this.InstalledDependencies.Add(new InstalledMod(v.ParentMod, v));
+                        Version vt = FindMod(s);
+                        InstalledMod test = tempDep.Find((x) => x.LongName == vt.ParentMod.LongName);
+                        if (test == null)
+                            tempDep.Add(new InstalledMod(vt.ParentMod, vt));
+                        else if (vt.VersionNumber.IsNewer(test.Version.VersionNumber))
+                        {
+                            tempDep.Remove(test);
+                            tempDep.Add(new InstalledMod(vt.ParentMod, vt));
+                        }
                     }
                 }
-                else if (!this.Rules.Exclusions.Contains(m.UUID4))
+                else
                     this.AvailableMods.Add(new MiniMod(m));
             }
-            List<InstalledMod> temp = new List<InstalledMod>();
-            foreach (InstalledMod im in this.InstalledMods)
-                if (!this.InstalledDependencies.Contains(im))
-                    temp.Add(im);
-            this.InstalledMods = temp;
-        }
-        //
-        public List<MiniMod> ModsToList
-        {
-            get {
-                List<MiniMod> t = new List<MiniMod>();
-                foreach (Mod m in this.mods)
-                    if (!this.Rules.Exclusions.Contains(m.UUID4))
-                        t.Add(new MiniMod(m));
-                return t;
+            foreach (InstalledMod m in tempAvail)
+            {
+                if (tempDep.Find((x) => x.LongName == m.LongName) == null)
+                    this.InstalledMods.Add(m);
             }
+            this.InstalledDependencies = new List<InstalledMod>(tempDep);
         }
-        //
     }
     public class RuleSet
     {

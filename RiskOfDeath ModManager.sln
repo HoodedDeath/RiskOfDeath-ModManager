@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RiskOfDeath ModManager", "R
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RiskOfDeath SetUrlProtocol", "RiskOfDeath SetUrlProtocol\RiskOfDeath SetUrlProtocol.csproj", "{0FA3D97A-4751-49A5-95CA-5BA26E907781}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RiskOfDeath Updater", "RiskOfDeath Updater\RiskOfDeath Updater.csproj", "{263A3C2E-50DA-4837-A78F-FE8F10D6AE55}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{0FA3D97A-4751-49A5-95CA-5BA26E907781}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0FA3D97A-4751-49A5-95CA-5BA26E907781}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0FA3D97A-4751-49A5-95CA-5BA26E907781}.Release|Any CPU.Build.0 = Release|Any CPU
+		{263A3C2E-50DA-4837-A78F-FE8F10D6AE55}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{263A3C2E-50DA-4837-A78F-FE8F10D6AE55}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{263A3C2E-50DA-4837-A78F-FE8F10D6AE55}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{263A3C2E-50DA-4837-A78F-FE8F10D6AE55}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

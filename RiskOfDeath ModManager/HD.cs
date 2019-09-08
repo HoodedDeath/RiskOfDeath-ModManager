@@ -277,8 +277,7 @@ namespace RiskOfDeath_ModManager
         public List<string> UUIDS { get; private set; } = new List<string>();
         public bool PickOne { get; private set; }
         public Dictionary<string, string[]> PickOptions { get; private set; } = new Dictionary<string, string[]>();
-        //public bool IsEmpty { get { return this.NumOfUUIDs == 0 || NumOfFiles == 0 || NumOfFolders == 0; } }
-        public bool IsEmpty { get { return !(Text != "" && NumOfUUIDs > 0 && (NumOfFiles > 0 || NumOfFolders > 0 || (/*PickOne &&*/ PickOptions.Count > 0))); } }
+        public bool IsEmpty { get { return !(Text != "" && NumOfUUIDs > 0 && (NumOfFiles > 0 || NumOfFolders > 0 || (PickOptions.Count > 0))); } }
 
         public new string Text
         {
@@ -298,11 +297,6 @@ namespace RiskOfDeath_ModManager
             {
                 return this.UUIDS.Count;
             }
-            /*set
-            {
-                this._numUUID = value;
-                this.uuidLabel.Text = string.Format("Matching UUIDs: {0}", value);
-            }*/
         }
         public int NumOfFiles
         {
@@ -310,11 +304,6 @@ namespace RiskOfDeath_ModManager
             {
                 return this.Files.Count;
             }
-            /*set
-            {
-                this._numFile = value;
-                this.fileLabel.Text = string.Format("File Rules: {0}", value);
-            }*/
         }
         public int NumOfFolders
         {
@@ -322,11 +311,6 @@ namespace RiskOfDeath_ModManager
             {
                 return this.Folders.Count;
             }
-            /*set
-            {
-                this._numFolder = value;
-                this.folderLabel.Text = string.Format("Folder Rules: {0}", value);
-            }*/
         }
 
         public HDSCGrouping(HD parent)
@@ -431,7 +415,6 @@ namespace RiskOfDeath_ModManager
             this.Size = new Size(174, 75);
             this.TabIndex = 7;
             this.TabStop = false;
-            //this.Text = /*this._text; // */"This is a long test string that will cut off after 20 characters";
             this.MouseHover += new EventHandler(this.Name_MouseHover);
             this.MouseLeave += new EventHandler(this.Global_MouseLeave);
             //

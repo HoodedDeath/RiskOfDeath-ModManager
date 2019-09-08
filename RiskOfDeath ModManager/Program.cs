@@ -26,7 +26,7 @@ namespace RiskOfDeath_ModManager
             try
             {
                 m = new Mutex(true, Application.ProductName.ToString(), out bool first);
-                if (first == false && args[0] != null && args[0].StartsWith("ror2mm://"))
+                if (first == false && args.Length > 0 && args[0] != null && args[0].StartsWith("ror2mm://"))
                 {
                     Console.WriteLine("Application already running, setting up for download ...");
                     WriteProtocolResult(args[0]);
@@ -37,6 +37,7 @@ namespace RiskOfDeath_ModManager
                 {
                     Console.WriteLine("Instance already running. Press any key to exit.");
                     Console.ReadKey();
+                    return;
                 }
                 else if (args != null && args.Length > 0)
                 {
@@ -50,23 +51,25 @@ namespace RiskOfDeath_ModManager
                 }
             }
             catch (Exception e) { Console.WriteLine(e.Message + e.StackTrace); }
-            //
 
-            if (!Directory.Exists(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "downloads")))
-                Directory.CreateDirectory(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "downloads"));
             Console.WriteLine("Checking for Risk Of Rain 2 installation...");
             string s = FindROR2Path();
             if (s == null || s == "" || s == "#UNKNOWN#")
             {
-                Console.WriteLine("Unable to find Risk Of Rain 2 folder. Please enter path to your Risk Of Rain 2 folder:");
+                Console.WriteLine("Unable to find RoR2 folder. Please enter path to your RoR2 folder:");
                 for (; ; )
                 {
                     string t = Console.ReadLine();
                     if (Directory.Exists(t))
                     {
-                        Console.WriteLine("Thank you.");
-                        s = t;
-                        break;
+                        if (Directory.GetFiles(t).Contains(Path.Combine(t, "Risk of Rain 2.exe")))
+                        {
+                            Console.WriteLine("Thank you.");
+                            s = t;
+                            break;
+                        }
+                        else
+                            Console.WriteLine("This forlder doesn't contain RoR2.");
                     }
                     else
                         Console.WriteLine("Please enter the path to a valid folder.");
@@ -91,29 +94,13 @@ namespace RiskOfDeath_ModManager
                 }
             }
             catch (CloseEverythingException) { return; }
-            /*handle += _form.MsgHandle;
-            //Application.EnableVisualStyles();
-            //Application.SetCompatibleTextRenderingDefault(false);
-            //Application.Run(new Form1());
-            int i = 0;
-            while (true)
+            catch (Exception e)
             {
-                if (i == 5)
-                    handle?.Invoke(null, new StringEventArgs("recursiveGecko-SimpleMacros-1.0.0")); // _form.MsgHandler.Invoke; // thread.Abort(); // _form.Close();
-                else
-                    Console.WriteLine("Waiting");
-                if (i <= 5)
-                    i++;
-                Thread.Sleep(5000);
-            }*/
+                Console.WriteLine("Caught exeption during execution:\n{0}{1}\n\nPress enter to exit...", e.Message, e.StackTrace);
+                Console.ReadLine();
+            }
             Console.WriteLine("Goodbye");
         }
-        /*static event EventHandler<StringEventArgs> handle;
-        static Form1 _form;
-        static void Thread_Work()
-        {
-            _form.ShowDialog();
-        }*/
         static string FindROR2Path()
         {
             string ret = "#UNKNOWN#";

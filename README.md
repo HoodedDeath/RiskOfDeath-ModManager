@@ -7,6 +7,11 @@
  
 - This currently only works with BepInEx mods. Support for the SeikoML mods is planned, thanks to yoshisman8 - SeikoML Compat Layer (though this feature is on the back burner)
 
+# How to install
+If you're downloading the manager for the first time, simply extract the 'Risk of Death' folder to wherever you'd like to, then run 'RiskOfDeath ModManager.exe'
+
+If you're updating from an older version, simply launch the manager and if there's a new version available, it will popup and ask if you want to update. When you select yes, the updater program will launch and update the application for you.
+
 # How to use
 This is a simple mod manager, with very simple steps, like the download button and uninstall button for mods. All dependencies are taken care of automatically!
 
@@ -49,3 +54,4 @@ When you click the "For Mod Devs" button, it will open a form that starts with t
 - 2.1.0 -> Implemmented "Install with Mod Manager" url protocol for downloading directly from thunderstore.io
 - 2.1.1 -> Added How To Use section to readme
 - 2.1.2 -> Fixed dependencies listing to not list dependencies under Installed Mods, Uninstalls dependencies when all mods depending on them are uninstalled, Removes folders created for mods when uninstalling
+- 2.2.0 -> Update code in preparation for upcoming V3 update. Added updater sister program for automating RoD updates

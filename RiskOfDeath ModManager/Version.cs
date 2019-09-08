@@ -97,10 +97,6 @@ namespace RiskOfDeath_ModManager
                 return false;
             if (this.Revision > vn.Revision)
                 return true;
-
-            /*if (this.MajorBuild <= vn.MajorBuild) return false;
-            if (this.MinorBuild <= vn.MinorBuild) return false;
-            if (this.Revision <= vn.Revision) return false;*/
             return false;
         }
         /// <summary>
@@ -117,9 +113,18 @@ namespace RiskOfDeath_ModManager
         /// <returns>True if the calling VersionNumber is older than the parameter, false if it is equal to or newer than the paramete</returns>
         public bool IsOlder(VersionNumber vn)
         {
-            if (this.MajorBuild >= vn.MajorBuild) return false;
-            if (this.MinorBuild >= vn.MinorBuild) return false;
-            if (this.Revision >= vn.Revision) return false;
+            if (this.MajorBuild < vn.MajorBuild)
+                return true;
+            if (this.MajorBuild > vn.MajorBuild)
+                return false;
+            if (this.MinorBuild < vn.MinorBuild)
+                return true;
+            if (this.MinorBuild > vn.MinorBuild)
+                return false;
+            if (this.Revision < vn.Revision)
+                return true;
+            if (this.Revision > vn.Revision)
+                return false;
             return true;
         }
         /// <summary>
@@ -128,6 +133,28 @@ namespace RiskOfDeath_ModManager
         /// <param name="vn">The string representation of the VersionNumber to test</param>
         /// <returns>True if the calling VersionNumber is older than the parameter, false if it is equal to or newer than the paramete</returns>
         public bool IsOlder(string vn) => IsOlder(new VersionNumber(vn));
+
+        /// <summary>
+        /// Tests if this VersionNumber is the same as the given VersionNumber
+        /// </summary>
+        /// <param name="vn">The VersionNumber to test</param>
+        /// <returns>True if the calling VersionNumber is the same as the parameter, false otherwise</returns>
+        public bool IsEqual(VersionNumber vn)
+        {
+            if (this.MajorBuild != vn.MajorBuild)
+                return false;
+            if (this.MinorBuild != vn.MinorBuild)
+                return false;
+            if (this.Revision != vn.Revision)
+                return false;
+            return true;
+        }
+        /// <summary>
+        /// Tests if this VersionNumber is the same as the given VerisonNumber
+        /// </summary>
+        /// <param name="vn">The string representation of the VersionNumber to test</param>
+        /// <returns>True if the calling VersionNumber is the same as the parameter, false otherwise</returns>
+        public bool IsEqual(string vn) => IsOlder(new VersionNumber(vn));
     }
     public class MiniVersion
     {

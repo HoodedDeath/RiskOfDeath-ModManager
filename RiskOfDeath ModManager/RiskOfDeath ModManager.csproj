@@ -81,7 +81,6 @@
     <Compile Include="CreatePerModRules.Designer.cs">
       <DependentUpon>CreatePerModRules.cs</DependentUpon>
     </Compile>
-    <Compile Include="Downloader.cs" />
     <Compile Include="Form1.cs">
       <SubType>Form</SubType>
     </Compile>
