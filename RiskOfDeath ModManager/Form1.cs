@@ -48,22 +48,24 @@ namespace RiskOfDeath_ModManager
             Console.WriteLine("Done loading.");
             if (this._mods.THIS_MOD.GetLatestVersion().VersionNumber.IsNewer(this._mods.THIS_VN))
             {
-                DialogResult res = MessageBox.Show("There's a new version of Risk of Death available. Would you like to update the app now?", "Update now?", MessageBoxButtons.YesNo);
+                DialogResult res = MessageBox.Show("There's a new version of Risk of Death MM available. Would you like to update now?", "Update now?", MessageBoxButtons.YesNo);
                 if (res == DialogResult.Yes)
                 {
                     //Install update
-                    UpdateRoD(null, null);
+                    //UpdateRoD(null, null);
+                    UpdateSelf(null, null);
                 }
                 else
                 {
-                    ToolStripMenuItem item = new ToolStripMenuItem
+                    /*ToolStripMenuItem item = new ToolStripMenuItem
                     {
                         Name = "updateMeToolStripMenuItem",
                         AutoSize = true,
                         Text = "Update RoD"
                     };
                     item.Click += new EventHandler(this.UpdateRoD);
-                    this.menuStrip1.Items.Add(item);
+                    this.menuStrip1.Items.Add(item);*/
+                    AddUpdateBtn();
                 }
             }
             WriteRoamingFiles();
@@ -73,14 +75,6 @@ namespace RiskOfDeath_ModManager
                 this.launchBtn.Visible = false;
             }
             protocolBackgroundWorker.RunWorkerAsync();
-        }
-        private void UpdateRoD(object sender, EventArgs e)
-        {
-            //Call sister 'updater' program
-            string temp = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "updater", "RiskOfDeath Updater.exe");
-            Process.Start("explorer.exe", temp);
-            Application.Exit();
-            throw new CloseEverythingException();
         }
         private void Form1_Closing(object sender, FormClosingEventArgs e)
         {
@@ -139,61 +133,24 @@ namespace RiskOfDeath_ModManager
         {
             this._mods.UpdateModLists();
 
-            this.panel1.AutoScrollPosition = new Point(0, 0);
-            this.panel2.AutoScrollPosition = new Point(0, 0);
-            this.panel3.AutoScrollPosition = new Point(0, 0);
-            this.panel1.Controls.Clear();
-            this.panel2.Controls.Clear();
-            this.panel3.Controls.Clear();
+            this.availablePanel.AutoScrollPosition = new Point(0, 0);
+            this.activePanel.AutoScrollPosition = new Point(0, 0);
+            //this.panel3.AutoScrollPosition = new Point(0, 0);
+            this.availablePanel.Controls.Clear();
+            this.activePanel.Controls.Clear();
+            //this.panel3.Controls.Clear();
 
             int[] aLocation = new int[] { 3, -87 };
             foreach (MiniMod m in this._mods.AvailableMods)
-                this.panel1.Controls.Add(new DownloadableGrouping(this, m) { Location = new Point(aLocation[0], aLocation[1] += 90) });
+                this.availablePanel.Controls.Add(new DownloadableGrouping(this, m) { Location = new Point(aLocation[0], aLocation[1] += 90) });
 
             int[] iLocation = new int[] { 3, -87 };
             foreach (InstalledMod m in this._mods.InstalledMods)
-                this.panel2.Controls.Add(new InstalledGrouping(m, this) { Location = new Point(iLocation[0], iLocation[1] += 90) });
+                this.activePanel.Controls.Add(new InstalledGrouping(m, this) { Location = new Point(iLocation[0], iLocation[1] += 90) });
 
-            int[] dLocation = new int[] { 3, -16 };
+            /*int[] dLocation = new int[] { 3, -16 };
             foreach (InstalledMod m in this._mods.InstalledDependencies)
-                this.panel3.Controls.Add(new Label { AutoSize = true, Location = new Point(dLocation[0], dLocation[1] += 19), Text = m.Version.DependencyString, BackColor = SystemColors.Control });
-        }
-
-        private void LaunchBtn_Click(object sender, EventArgs e)
-        {
-            Process.Start("explorer.exe", "steam://rungameid/632360");
-        }
-
-        private void ExitToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            Close();
-            Dispose();
-        }
-
-        private void ModDevs_MouseDown(object sender, MouseEventArgs e)
-        {
-            switch (e.Button)
-            {
-                case MouseButtons.Right:
-                    CreatePerModRules form = new CreatePerModRules();
-                    form.ShowDialog();
-                    form.Dispose();
-                    break;
-                default:
-                    if (_hd)
-                    {
-                        HD f = new HD();
-                        f.ShowDialog();
-                        f.Dispose();
-                    }
-                    else
-                    {
-                        CreatePerModRules f = new CreatePerModRules();
-                        f.ShowDialog();
-                        f.Dispose();
-                    }
-                    break;
-            }
+                this.panel3.Controls.Add(new Label { AutoSize = true, Location = new Point(dLocation[0], dLocation[1] += 19), Text = m.Version.DependencyString, BackColor = SystemColors.Control });*/
         }
 
         public void Install(string dependencyString)
@@ -212,22 +169,7 @@ namespace RiskOfDeath_ModManager
             ListPackages();
         }
 
-        private void LinkManagerProtocolToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            DialogResult res = MessageBox.Show("This will let you use the \"Install with Mod Manager\" button on ThunderStore to launch this manager and download a mod. If you have another manager set up for that protocol, it will be overwritten. Do you want to continue?", "Confirm", MessageBoxButtons.YesNo);
-            if (res == DialogResult.Yes)
-            {
-                string p = Assembly.GetExecutingAssembly().Location;
-                StreamWriter sw = new StreamWriter(File.Open(Path.Combine(Path.GetDirectoryName(p), "temp"), FileMode.OpenOrCreate));
-                sw.WriteLine(p);
-                sw.Flush();
-                sw.Close();
-                sw.Dispose();
-                Process.Start(Path.Combine(Path.GetDirectoryName(p), "RiskOfDeath SetUrlProtocol.exe"));
-            }
-        }
-
-
+        // Listen for thunderstore mod manager url requests
         private void ProtocolBackgroundWorker_DoWork(object sender, DoWorkEventArgs e)
         {
             BackgroundWorker worker = sender as BackgroundWorker;
@@ -267,13 +209,136 @@ namespace RiskOfDeath_ModManager
                 protocolBackgroundWorker.RunWorkerAsync();
             }
         }
+        //
 
-        private void UpdateBepInExR2APIToolStripMenuItem_Click(object sender, EventArgs e)
+        // Slide Side Panel
+        private bool panel_is_out = false;
+        private int panel_loc = 0;
+        private readonly List<Control> panel_controls = new List<Control>();
+        private void PanelBGWorker_DoWork(object sender, DoWorkEventArgs e)
         {
-            this._mods.UpdateMod(this._mods.BEP.GetLatestVersion().DependencyString);
-            this._mods.UpdateMod(this._mods.R2API.GetLatestVersion().DependencyString);
-            ListPackages();
+            panel_loc = sidePanel.Location.X;
+            BackgroundWorker worker = sender as BackgroundWorker;
+            int l = 0;
+            for (int i = 0; i < 338; i++)
+            {
+                worker.ReportProgress(panel_is_out ? panel_loc - i : panel_loc + i);
+                Thread.Sleep(l == 0 ? 1 : 0);
+                l = (l + 1) % 5;
+            }
+            panel_is_out = !panel_is_out;
         }
+        private void PanelBGWorker_ProgressChanged(object sender, ProgressChangedEventArgs e)
+        {
+            sidePanel.Location = new Point(e.ProgressPercentage, sidePanel.Location.Y);
+            sideDockPanel.Visible = sidePanel.Location.X < -250;
+        }
+        private void PanelBGWorker_WorkDone(object sender, RunWorkerCompletedEventArgs e)
+        {
+            if (e.Error != null)
+                MessageBox.Show(e.Error.Message + e.Error.StackTrace);
+            sidePanel.Controls.AddRange(panel_controls.ToArray());
+            panel_controls.Clear();
+        }
+        private void PanelBtns_Click(object sender, EventArgs e)
+        {
+            if (!panelBGWorker.IsBusy)
+            {
+                profsPanelInPanel.AutoScrollPosition = new Point(0, 0);
+                foreach (Control c in sidePanel.Controls)
+                    panel_controls.Add(c);
+                sidePanel.Controls.Clear();
+                panelBGWorker.RunWorkerAsync();
+            }
+        }
+        //Side Panel Functionality
+        private void AddUpdateBtn()
+        {
+            this.profsPanelInPanel.Size = new Size(profsPanelInPanel.Width, profsPanelInPanel.Height - 26);
+            Button updateBtnInPanel = new Button
+            {
+                BackColor = SystemColors.Control,
+                Font = new Font("Microsoft Sans Serif", 9.75F, FontStyle.Regular, GraphicsUnit.Point, 0),
+                Location = new Point(3, 346),
+                Name = "updateBtnInPanel",
+                Size = new Size(326, 23),
+                TabIndex = 5,
+                Text = "Update",
+                UseVisualStyleBackColor = false
+            };
+            updateBtnInPanel.Click += new EventHandler(this.UpdateSelf);
+            this.sidePanel.Controls.Add(updateBtnInPanel);
+        }
+        private void UpdateSelf(object sender, EventArgs e)
+        {
+            //Call sister 'updater' program
+            //string temp = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "updater", "RiskOfDeath Updater.exe");
+            if (!File.Exists(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "updater", "RiskOfDeath Updater.exe")))
+            {
+                MessageBox.Show("Updater program file cannot be found.", "Updater Not Found", MessageBoxButtons.OK);
+                return;
+            }
+            Process.Start("explorer.exe", Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "updater", "RiskOfDeath Updater.exe") /*temp*/);
+            Application.Exit();
+            throw new CloseEverythingException();
+        }
+        private void Launch_Click(object sender, EventArgs e)
+        {
+            Process.Start("explorer.exe", "steam://rungameid/632360");
+        }
+        private void Exit_Click(object sender, EventArgs e)
+        {
+            Close();
+            Dispose();
+        }
+        private void RuleSetup_MouseDown(object sender, MouseEventArgs e)
+        {
+            switch (e.Button)
+            {
+                case MouseButtons.Right:
+                    CreatePerModRules form = new CreatePerModRules();
+                    form.ShowDialog();
+                    form.Dispose();
+                    break;
+                default:
+                    if (_hd)
+                    {
+                        HD f = new HD();
+                        f.ShowDialog();
+                        f.Dispose();
+                    }
+                    else
+                    {
+                        CreatePerModRules f = new CreatePerModRules();
+                        f.ShowDialog();
+                        f.Dispose();
+                    }
+                    break;
+            }
+        }
+        private void LinkManagerURL_Click(object sender, EventArgs e)
+        {
+            DialogResult res = MessageBox.Show("This will let you use the \"Install with Mod Manager\" button on ThunderStore to launch this manager and download a mod. If you have another manager set up for that protocol, it will be overwritten. Administrator rights are required. Do you want to continue?", "Confirm", MessageBoxButtons.YesNo);
+            if (res == DialogResult.Yes)
+            {
+                string p = Assembly.GetExecutingAssembly().Location;
+                StreamWriter sw = new StreamWriter(File.Open(Path.Combine(Path.GetDirectoryName(p), "temp"), FileMode.OpenOrCreate));
+                sw.WriteLine(p);
+                sw.Flush();
+                sw.Close();
+                sw.Dispose();
+                Process.Start(Path.Combine(Path.GetDirectoryName(p), "RiskOfDeath SetUrlProtocol.exe"));
+            }
+        }
+        private void Help_Click(object sender, EventArgs e)
+        {
+            MessageBox.Show("HelpBtn");
+        }
+        private void AddProfile_Click(object sender, EventArgs e)
+        {
+            MessageBox.Show("AddProfileBtn");
+        }
+        //
     }
     public class DownloadableGrouping : GroupBox
     {

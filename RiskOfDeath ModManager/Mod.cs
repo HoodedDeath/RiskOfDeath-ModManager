@@ -16,18 +16,35 @@ namespace RiskOfDeath_ModManager
 {
     public class ModContainer
     {
+        // --- NEW ---
+        public Dictionary<string, Profile> Profiles { get; private set; } = new Dictionary<string, Profile>();
+        private string _currentProfID = "0";
+        private Dictionary<string, Dictionary<string, MappedModFiles>> installedmods = new Dictionary<string, Dictionary<string, MappedModFiles>>();
+        private readonly string INST_PATH = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "installed.json");
+        private readonly string RULE_PATH = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "RuleSet.json");
+        private readonly string PROF_PATH = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "profiles.json");
+        private readonly string DL_PATH = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "downloads");
+        // ---
+
         private readonly List<Mod> mods = new List<Mod>();
+        //deprecated
         private string BEP_UUID => "4c253b36-fd0b-4e6d-b4d8-b227972af4da";
+        //deprecated
         private Mod bep;
+        //deprecated
         public Mod BEP { get { return this.bep; } }
+        //deprecated
         private string R2API_UUID => "75541a7e-8bfc-4585-a842-5dbf1aae5b3d";
+        //deprecated
         private Mod r2api;
+        //deprecated
         public Mod R2API { get { return this.r2api; } }
+
         public const string THIS_UUID = "ab3e2616-672f-4791-91a9-a09647d7f26d";
         public Mod THIS_MOD { get; private set; }
-        public readonly string THIS_VN = "2.2.1";
+        public readonly string THIS_VN = "2.2.1"; // NEEDS CHANGE
         public RuleSet Rules { get; private set; }
-        private Dictionary<string, MappedInstalledMod> installedmods = new Dictionary<string, MappedInstalledMod>();
+        //private Dictionary<string, MappedInstalledMod> installedmods = new Dictionary<string, MappedInstalledMod>(); //TO BE CHANGED TO TYPE OF Dictionary<string(Mod.LongName), Dictionary<string(VersionNumber), MappedModFiles>>
         private readonly string ror2;
 
         /// <summary>
@@ -47,25 +64,26 @@ namespace RiskOfDeath_ModManager
         {
             this.ror2 = ror2Path;
             //Check for old installed json file
-            if (!File.Exists(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "checked")))
+            if (!File.Exists(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "checkedV3")))
             {
-                if (File.Exists(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "installed.json")))
+                if (File.Exists(INST_PATH))
                 {
-                    if (MessageBox.Show("There has been a major change to the way installed mods are saved and your current installed mods file can no longer be used. If you choose yes, the current file holding installed mods will be deleted. This manager works best with fresh, unmodified installation of Risk of Rain 2.", "Changes to installation file", MessageBoxButtons.YesNo) == DialogResult.Yes)
+                    /*if (MessageBox.Show("There has been a major change to the way installed mods are saved and your current installed mods file can no longer be used. If you choose yes, the current file holding installed mods will be deleted. This manager works best with fresh, unmodified installation of Risk of Rain 2.", "Changes to installation file", MessageBoxButtons.YesNo) == DialogResult.Yes)*/
+                    if (MessageBox.Show("Version 3 has introduced major changes to the \"installed.json\" file and your current installed mods file is now incompatible and will need to be overwritten. If you choose yes, the your current installed mods file will be deleted. If you choose no, RoDMM will close. It is recommended that you start with a fresh, unmodified installation of Risk of Rain 2.", "Installed File Changed", MessageBoxButtons.YesNo) == DialogResult.Yes)
                     {
-                        File.Delete(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "installed.json"));
+                        File.Delete(INST_PATH);
                     }
                     else throw new CloseEverythingException();
                 }
-                FileStream temp = File.Create(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "checked"));
+                FileStream temp = File.Create(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "checkedV3"));
                 temp.Close();
                 temp.Dispose();
             }
             //Read installed mods
             try
             {
-                StreamReader sr = new StreamReader(File.OpenRead(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "installed.json")));
-                this.installedmods = JsonConvert.DeserializeObject<Dictionary<string, MappedInstalledMod>>(sr.ReadToEnd());
+                StreamReader sr = new StreamReader(File.OpenRead(INST_PATH));
+                this.installedmods = JsonConvert.DeserializeObject<Dictionary<string, Dictionary<string, MappedModFiles>>>(sr.ReadToEnd());
                 sr.Close();
                 sr.Dispose();
             }
@@ -74,7 +92,7 @@ namespace RiskOfDeath_ModManager
             //Read RuleSet
             try
             {
-                StreamReader sr = new StreamReader(File.OpenRead(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "RuleSet.json")));
+                StreamReader sr = new StreamReader(File.OpenRead(RULE_PATH));
                 this.Rules = JsonConvert.DeserializeObject<RuleSet>(sr.ReadToEnd());
                 sr.Close();
                 sr.Dispose();
@@ -82,16 +100,27 @@ namespace RiskOfDeath_ModManager
             catch (FileNotFoundException) { Console.WriteLine("RuleSet file cannot be found. Downloads may not function."); MessageBox.Show("RuleSet file cannot be found. Downloads may not function properly."); }
             catch (Exception e) { Console.WriteLine(e.Message + e.StackTrace); new MessageForm().Show(e.Message + e.StackTrace, "An error occurred while loading RuleSet"); }
             DeserializeMods(jsonFromThunderStore);
-            /*if (this.THIS_MOD.GetLatestVersion().VersionNumber.IsNewer(THIS_VN) && MessageBox.Show("There's a new version of Risk of Death available. Would you like to open Thunderstore to download the latest version?", "Update?", MessageBoxButtons.YesNo) == DialogResult.Yes)
-            { Process.Start("explorer.exe", "https://thunderstore.io/package/HoodedDeath/RiskOfDeathModManager/"); throw new CloseEverythingException(); }*/
-            if (!CheckBepWithR2API(ror2Path))
+            //Read Profiles
+            try
             {
-                Console.WriteLine("BepInEx/R2API not installed/invalid. Beginning download of latest version.");
-                MessageBox.Show("BepInEx not installed/invalid. Will be downloaded and installed.");
-                //Download BepInEx and R2API
-                Download(this.bep.GetLatestVersion().LongName, this.r2api.GetLatestVersion().LongName);
-                Console.WriteLine("Done downloading BepInEx and R2API.");
+                StreamReader sr = new StreamReader(File.OpenRead(PROF_PATH));
+                this.Profiles = JsonConvert.DeserializeObject<Dictionary<string, Profile>>(sr.ReadToEnd());
+                sr.Close();
+                sr.Dispose();
             }
+            catch (FileNotFoundException)
+            {
+                Console.WriteLine("Profiles file does not exist. Creating blank profile as default.");
+                this.Profiles.Add("0", new Profile() { Name = "Default Profile", Mods = new List<string>() });
+            }
+            catch (Exception e) { Console.WriteLine("Caught Exception while reading profiles file:\n{0}{1}", e.Message, e.StackTrace); }
+
+
+            //deprecated
+            /*if (!CheckBepWithR2API(ror2Path))
+            {
+                Console.WriteLine("REMOVE BEPINEX CHECK");
+            }*/
         }
         // --NOT CURRENTLY IN USE--
         // --ONLY NEEDED IF SERIALIZING AND WRITING INSTALLED MODS BREAKS DURING DOWNLOAD METHOD--
@@ -110,15 +139,20 @@ namespace RiskOfDeath_ModManager
             foreach (ModJson mj in temp)
                 if (mj.uuid4 == THIS_UUID)
                     this.THIS_MOD = new Mod(mj);
-                else if (mj.uuid4 == BEP_UUID)
+                //deprecated
+                /*else if (mj.uuid4 == BEP_UUID)
                     this.bep = new Mod(mj);
+                //deprecated
                 else if (mj.uuid4 == R2API_UUID)
-                    this.r2api = new Mod(mj);
+                    this.r2api = new Mod(mj);*/
                 else
                     this.mods.Add(new Mod(mj));
         }
+        //deprecated
         private bool CheckBepWithR2API(string instPath)
         {
+            Console.WriteLine("CALLED CHECKBEPWITHR2API - NEEDS REMOVAL");
+            return true;
             //Check BepInEx
             string bep = Path.Combine(instPath, "BepInEx");
             if (!File.Exists(Path.Combine(instPath, "doorstop_config.ini"))) return false;
@@ -175,45 +209,54 @@ namespace RiskOfDeath_ModManager
         [DebuggerStepThrough]
         public Version FindMod(string dependencyString)
         {
-            foreach (Version v in this.bep.Versions)
+            /*foreach (Version v in this.bep.Versions)
                 if (v.DependencyString == dependencyString)
                     return v;
             foreach (Version v in this.r2api.Versions)
                 if (v.DependencyString == dependencyString)
-                    return v;
+                    return v;*/
             foreach (Mod m in this.mods)
                 foreach (Version v in m.Versions)
                     if (v.LongName == dependencyString)
                         return v;
             return null;
         }
-
-        public void Download(bool backupOnOverwrite, params string[] modStrings)
+        [DebuggerStepThrough]
+        public Version FindMod(string modLongName, string verNum)
         {
-            foreach (string s in modStrings)
-                Download(s, backupOnOverwrite);
+            foreach (Mod m in this.mods)
+                if (m.LongName == modLongName)
+                    foreach (Version v in m.Versions)
+                        if (v.VersionNumber.ToString() == verNum)
+                            return v;
+            return null;
         }
+
         public void Download(params string[] modStrings)
         {
             foreach (string s in modStrings)
-                Download(s, true);
+                Download(s);
         }
+        // NEEDS CHANGE
         public void Download(string dependencyString)
-        {
-            Download(dependencyString, true);
-        }
-        public void Download(string dependencyString, bool backupOnOverwrite)
         {
             //Get version from dependency string
             Version v = FindMod(dependencyString);
             //Download dependencies
             Download(v.Dependencies.ToArray());
-            //If the mod is already installed and the installed version is not older than this one, return, don't install this version
-            if (installedmods.ContainsKey(v.ParentMod.LongName) && !new VersionNumber(installedmods[v.ParentMod.LongName].VersionNumber).IsOlder(v.VersionNumber))
-                return;
             //If the mod is deprecated, prompt the user that it may not work and ask if they want to install anyway; return if result is no
-            if (v.ParentMod.IsDeprecated && MessageBox.Show(string.Format("This mod ({0}) is deprecated and may not install and run properly. It is recommended that you find a newer mod instead. Do you want to continue with installing this mod?", v.DependencyString), "Deprecated Mod", MessageBoxButtons.YesNo) == DialogResult.No)
+            if (v.ParentMod.IsDeprecated && MessageBox.Show(string.Format("This mod ({0}) is deprecated and may not install and run properly. It is recommended that you find a newer mod instead. Do you want to continue with installing this mod?", dependencyString), "Deprecated Mod", MessageBoxButtons.YesNo) == DialogResult.No)
+            {
+                Console.WriteLine("Skipping deprecated mod \'{0}\' because of user input.", dependencyString);
                 return;
+            }
+            //If this version of the mod is already installed, skip
+            if (this.installedmods.ContainsKey(v.ParentMod.LongName) && this.installedmods[v.ParentMod.LongName].ContainsKey(v.VersionNumber.ToString()))
+            {
+                Console.WriteLine("{0} already installed, skipping download and adding to profile '{1}'s mods.", dependencyString, this.Profiles[_currentProfID].Name ?? "Unknown Profile Name");
+                this.Profiles[_currentProfID].Mods.Add(dependencyString);
+                return;
+            }
             //Path to download folder
             string path = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "downloads");
             //If download folder doesn't exist, create it
@@ -224,8 +267,12 @@ namespace RiskOfDeath_ModManager
             using (var client = new WebClient())
             {
                 Console.WriteLine("Downloading {0} ...", v.DependencyString);
+                if (File.Exists(path + ".zip"))
+                    File.Delete(path + ".zip");
+                // --- Trying to help download speed ---
                 client.Proxy = null;
                 WebRequest.DefaultWebProxy = null;
+                // ---
                 client.DownloadFile(v.DownloadUrl, path + ".zip");
                 client.Dispose();
             }
@@ -235,14 +282,14 @@ namespace RiskOfDeath_ModManager
                 Helper.DeleteDirectory(path);
             ZipFile.ExtractToDirectory(path + ".zip", path);
             string workingdir = path;
-            //Files to not worry about copying
-            string[] excludedfiles = new string[] { "icon.png", "license.txt", "manifest.json", "readme.md", "instructions.txt", "license", "credits.txt", "icon.psd", "assetplus.xml", "changelog.md", "license.md" };
+            //Delete zip file
+            File.Delete(path + ".zip");
             //Begin install
-            List<string> fileList = new List<string>();
+            Dictionary<string, string> fileDict = new Dictionary<string, string>();
             if (File.Exists(Path.Combine(workingdir, "rules.json"))) //Author defined rules
             {
                 //Read rules file
-                Console.WriteLine("Installing with author-defined rule set ...");
+                Console.WriteLine("Setting up with author-defined rule set ...");
                 StreamReader sr = new StreamReader(File.OpenRead(Path.Combine(workingdir, "rules.json")));
                 Dictionary<string, string> dict = JsonConvert.DeserializeObject<Dictionary<string, string>>(sr.ReadToEnd());
                 sr.Close();
@@ -302,13 +349,13 @@ namespace RiskOfDeath_ModManager
                                 s = Path.Combine(ror2, "BepInEx", "plugins", v.DependencyString, s);
                                 break;
                         }
-                        VerifyPathToFile(s);
+                        /*VerifyPathToFile(s);
                         if (backupOnOverwrite && File.Exists(modf))
                             File.Move(s, s + ".bak");
                         File.Copy(modf, s, true);
                         fileList.Add(s);
-                        Console.WriteLine("\"{0}\" copied to \"{1}\"", modf, s);
-
+                        Console.WriteLine("\"{0}\" copied to \"{1}\"", modf, s);*/
+                        fileDict[modf] = s;
                     }
                 }
             }
@@ -323,8 +370,11 @@ namespace RiskOfDeath_ModManager
                     if (scr.UUIDS.Contains(v.ParentMod.UUID4))
                         sc = scr;
                 }
+                //Files to not worry about copying
+                string[] excludedfiles = new string[] { "icon.png", "license.txt", "manifest.json", "readme.md", "instructions.txt", "license", "credits.txt", "icon.psd", "assetplus.xml", "changelog.md", "license.md" };
                 if (sc != null)
                 {
+                    Console.WriteLine("Setting up with special case rule set ...");
                     //special case
                     List<string> ignore = new List<string>();
                     foreach (string st in excludedfiles)
@@ -359,12 +409,13 @@ namespace RiskOfDeath_ModManager
                                         s = Path.Combine(ror2, "BepInEx", "plugins", v.DependencyString, s);
                                         break;
                                 }
-                                VerifyPathToFile(s);
+                                /*VerifyPathToFile(s);
                                 if (backupOnOverwrite && File.Exists(s))
                                     File.Move(s, s + ".bak");
                                 File.Copy(mod, s, true);
                                 fileList.Add(s);
-                                Console.WriteLine("{0} -> Selected {1}", v.ParentMod.LongName, k.Key);
+                                Console.WriteLine("{0} -> Selected {1}", v.ParentMod.LongName, k.Key);*/
+                                fileDict[mod] = s;
                             }
                             else
                                 Console.WriteLine("+\n+\n+\nidk wtf just happened here - options dialog should've only given a dialog result of ok or cancel\n+\n+\n+");
@@ -434,12 +485,13 @@ namespace RiskOfDeath_ModManager
                                     s = Path.Combine(ror2, "BepInEx", "plugins", v.DependencyString, s);
                                     break;
                             }
-                            VerifyPathToFile(s);
+                            /*VerifyPathToFile(s);
                             if (backupOnOverwrite && File.Exists(s))
                                 File.Move(s, s + ".bak");
                             File.Copy(modf, s, true);
                             fileList.Add(s);
-                            Console.WriteLine("\"{0}\" copied to \"{1}\"", modf, s);
+                            Console.WriteLine("\"{0}\" copied to \"{1}\"", modf, s);*/
+                            fileDict[modf] = s;
                             ignore.Add(modf.ToLower());
                         }
                     }
@@ -463,19 +515,20 @@ namespace RiskOfDeath_ModManager
                                 s = Path.Combine(ror2, "BepInEx", "plugins", v.DependencyString, s);
                                 break;
                         }
-                        VerifyPathToFile(s);
+                        /*VerifyPathToFile(s);
                         if (backupOnOverwrite && File.Exists(s))
                             File.Move(s, s + ".bak");
                         File.Copy(f, s, true);
                         fileList.Add(s);
-                        Console.WriteLine("\"{0}\" copied to \"{1}\"", f, s);
+                        Console.WriteLine("\"{0}\" copied to \"{1}\"", f, s);*/
+                        fileDict[f] = s;
                         ignore.Add(f.ToLower());
                     }
                 }
                 else
                 {
                     //general rules
-                    Console.WriteLine("Installing with default ruleset ...");
+                    Console.WriteLine("Setting up with default ruleset ...");
                     //folder rules
                     foreach (string p in Directory.GetDirectories(workingdir, "*", SearchOption.TopDirectoryOnly))
                     {
@@ -531,12 +584,13 @@ namespace RiskOfDeath_ModManager
                                     s = Path.Combine(ror2, "BepInEx", "plugins", v.DependencyString, s);
                                     break;
                             }
-                            VerifyPathToFile(s);
+                            /*VerifyPathToFile(s);
                             if (backupOnOverwrite && File.Exists(s))
                                 File.Move(s, s + ".bak");
                             File.Copy(modf, s, true);
                             fileList.Add(s);
-                            Console.WriteLine("\"{0}\" copied to \"{1}\"", modf, s);
+                            Console.WriteLine("\"{0}\" copied to \"{1}\"", modf, s);*/
+                            fileDict[modf] = s;
                         }
                     }
                     //
@@ -560,33 +614,90 @@ namespace RiskOfDeath_ModManager
                                 s = Path.Combine(ror2, "BepInEx", "plugins", v.DependencyString, s);
                                 break;
                         }
-                        VerifyPathToFile(s);
+                        /*VerifyPathToFile(s);
                         if (backupOnOverwrite && File.Exists(s))
                             File.Move(s, s + ".bak");
                         File.Copy(f, s, true);
                         fileList.Add(s);
-                        Console.WriteLine("\"{0}\" copied to \"{1}\"", f, s);
+                        Console.WriteLine("\"{0}\" copied to \"{1}\"", f, s);*/
+                        fileDict[f] = s;
                     }
 
                 }
             }
-            Helper.DeleteDirectory(workingdir);
+            //Helper.DeleteDirectory(workingdir);
             //
             //SeikoML should be replaced by SeikoMLCompatLayer
-            MappedInstalledMod map = new MappedInstalledMod() { VersionNumber = v.VersionNumber.ToString(), Files = fileList.ToArray() };
-            this.installedmods.Add(v.ParentMod.LongName, map);
-            if (File.Exists(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "installed.json")))
-                File.Delete(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "installed.json"));
-            StreamWriter sw = new StreamWriter(File.Open(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "installed.json"), FileMode.OpenOrCreate));
+            //MappedInstalledMod map = new MappedInstalledMod() { VersionNumber = v.VersionNumber.ToString(), Files = fileList.ToArray() };
+            //this.installedmods.Add(v.ParentMod.LongName, map);
+            MappedModFiles map = new MappedModFiles() { Files = fileDict };
+            if (!this.installedmods.ContainsKey(v.ParentMod.LongName))
+                this.installedmods[v.ParentMod.LongName] = new Dictionary<string, MappedModFiles>();
+            this.installedmods[v.ParentMod.LongName][v.VersionNumber.ToString()] = map;
+            //
+            this.Profiles[this._currentProfID].Mods.Add(dependencyString);
+            //
+
+            if (File.Exists(INST_PATH))
+                File.Delete(INST_PATH);
+            StreamWriter sw = new StreamWriter(File.Open(INST_PATH, FileMode.OpenOrCreate));
             sw.Write(JsonConvert.SerializeObject(this.installedmods, Formatting.Indented));
             sw.Flush();
             sw.Close();
             sw.Dispose();
         }
+        // NEEDS CHANGE
         public void Uninstall(string dependencyString)
         {
             Version v = FindMod(dependencyString);
-            string[] files = this.installedmods[v.ParentMod.LongName].Files;
+            bool rem = this.Profiles[_currentProfID].Mods.Remove(dependencyString);
+            if (!rem)
+            {
+                if (this.Profiles[_currentProfID].Mods.Contains(dependencyString))
+                {
+                    Console.WriteLine("Mod '{0}' could not be removed from Profile '{1}' for an unknown reason.", dependencyString, this.Profiles[_currentProfID].Name ?? "Unknown Profile Name");
+                }
+                else
+                {
+                    Console.WriteLine("Mod '{0}' is not installed in Profile '{1}'.", dependencyString, this.Profiles[_currentProfID].Name ?? "Unknown Profile Name");
+                }
+            }
+            bool isUsed = false;
+            foreach (Profile prof in this.Profiles.Values)
+            {
+                if (isUsed)
+                    break;
+                isUsed |= prof.Mods.Contains(dependencyString);
+            }
+            if (!isUsed)
+            {
+                Console.WriteLine("Mod '{0}' is no longer used by any profiles and will be deleted.", dependencyString);
+                if (!this.installedmods.ContainsKey(v.ParentMod.LongName))
+                    Console.WriteLine("Installed mods doesn't contain mod key for mod '{0}', so wtf happened here", dependencyString);
+                else
+                {
+                    if (!this.installedmods[v.ParentMod.LongName].ContainsKey(v.VersionNumber.ToString()))
+                        Console.WriteLine("Installed mods doesn't contain a version key for mod '{0}', so idk what we have here", dependencyString);
+                    else
+                    {
+                        this.installedmods[v.ParentMod.LongName].Remove(v.VersionNumber.ToString());
+                        if (File.Exists(INST_PATH))
+                            File.Delete(INST_PATH);
+                        StreamWriter sw = new StreamWriter(File.Open(INST_PATH, FileMode.OpenOrCreate));
+                        sw.WriteLine(JsonConvert.SerializeObject(this.installedmods, Formatting.Indented));
+                        sw.Flush();
+                        sw.Close();
+                        sw.Dispose();
+                    }
+                }
+                Helper.DeleteDirectory(Path.Combine(DL_PATH, dependencyString));
+            }
+            else
+                Console.WriteLine("Mod '{0}' is still used by another profile and will be retained unless removed from other profile(s).");
+            CleanDependenies(v.Dependencies.ToArray());
+
+            /*Version v = FindMod(dependencyString);
+            string[] files = new string[0]; // = this.installedmods[v.ParentMod.LongName].Files;
             foreach (string file in files)
             {
                 File.Delete(file);
@@ -611,11 +722,30 @@ namespace RiskOfDeath_ModManager
             sw.Flush();
             sw.Close();
             sw.Dispose();
-            CleanDependenies(v.Dependencies.ToArray());
+            CleanDependenies(v.Dependencies.ToArray());*/
         }
+
+        //POSSIBLY NEEDS CHANGED OR DEPRECATION
         private void CleanDependenies(params string[] dependencies)
         {
             foreach (string test in dependencies)
+            {
+                bool b = false;
+                foreach (string mod in this.installedmods.Keys)
+                {
+                    if (b) break;
+                    foreach (string vers in this.installedmods[mod].Keys)
+                    {
+                        if (b) break;
+                        Version v = FindMod(mod, vers);
+                        b |= v.Dependencies.Contains(test);
+                    }
+                }
+                if (!b)
+                    Uninstall(test);
+            }
+
+            /*foreach (string test in dependencies)
             {
                 bool b = false;
                 UpdateModLists();
@@ -629,15 +759,16 @@ namespace RiskOfDeath_ModManager
                 }
                 if (!b)
                     Uninstall(test);
-            }
+            }*/
         }
         public void UpdateMod(string dependencyString)
         {
             Uninstall(dependencyString);
             Download(FindMod(dependencyString).ParentMod.GetLatestVersion().DependencyString);
         }
-        private void VerifyPathToFile(string path)
+        /*private void VerifyPathToFile(string path)
         {
+            return;
             if (path == null || path.Trim() == "")
                 throw new ArgumentException("Path input for VerifyPathToFile cannot be null or empty");
             path = path.Trim();
@@ -649,65 +780,49 @@ namespace RiskOfDeath_ModManager
                 if (!Directory.Exists(s))
                     Directory.CreateDirectory(s);
             }
-        }
+        }*/
 
-        //[DebuggerStepThrough]
+        // NEEDS CHANGE
         public void UpdateModLists()
         {
             this.AvailableMods = new List<MiniMod>();
             this.InstalledMods = new List<InstalledMod>();
-            List<InstalledMod> tempAvail = new List<InstalledMod>();
-            List<InstalledMod> tempDep = new List<InstalledMod>();
-            /*{
-                new InstalledMod(this.bep,   FindMod(string.Format("{0}-{1}", this.bep.LongName,   this.installedmods[this.bep.LongName].VersionNumber))),
-                new InstalledMod(this.r2api, FindMod(string.Format("{0}-{1}", this.r2api.LongName, this.installedmods[this.r2api.LongName].VersionNumber)))
-            };*/
-
-            try
-            {
-                tempDep.Add(new InstalledMod(this.bep, FindMod(string.Format("{0}-{1}", this.bep.LongName, this.installedmods[this.bep.LongName].VersionNumber))));
-            }
-            catch (Exception)
-            {
-                tempDep.Add(new InstalledMod(this.bep, this.bep.GetLatestVersion()));
-            }
-            try
-            {
-                tempDep.Add(new InstalledMod(this.r2api, FindMod(string.Format("{0}-{1}", this.r2api.LongName, this.installedmods[this.r2api.LongName].VersionNumber))));
-            }
-            catch (Exception)
-            {
-                tempDep.Add(new InstalledMod(this.r2api, this.r2api.GetLatestVersion()));
-            }
-
             foreach (Mod m in this.mods)
             {
-                if (this.installedmods.ContainsKey(m.LongName))
+                bool b = false;
+                Version ver = null;
+                foreach (Version v in m.Versions)
                 {
-                    Version v = FindMod(string.Format("{0}-{1}", m.LongName, this.installedmods[m.LongName].VersionNumber));
-                    tempAvail.Add(new InstalledMod(m, v));
-                    foreach (string s in v.Dependencies)
-                    {
-                        Version vt = FindMod(s);
-                        InstalledMod test = tempDep.Find((x) => x.LongName == vt.ParentMod.LongName);
-                        if (test == null)
-                            tempDep.Add(new InstalledMod(vt.ParentMod, vt));
-                        else if (vt.VersionNumber.IsNewer(test.Version.VersionNumber))
-                        {
-                            tempDep.Remove(test);
-                            tempDep.Add(new InstalledMod(vt.ParentMod, vt));
-                        }
-                    }
+                    if (ver != null)
+                        break;
+                    if (this.Profiles[this._currentProfID].Mods.Contains(v.DependencyString))
+                        ver = v;
                 }
+                if (ver != null)
+                    this.InstalledMods.Add(new InstalledMod(m, ver));
                 else
                     this.AvailableMods.Add(new MiniMod(m));
             }
-            foreach (InstalledMod m in tempAvail)
+
+            /*this.AvailableMods = new List<MiniMod>();
+            this.InstalledMods = new List<InstalledMod>();
+            foreach (Mod m in this.mods)
             {
-                if (tempDep.Find((x) => x.LongName == m.LongName) == null)
-                    this.InstalledMods.Add(m);
-            }
-            this.InstalledDependencies = new List<InstalledMod>(tempDep);
+                if (this.installedmods.ContainsKey(m.LongName))
+                    this.InstalledMods.Add(new InstalledMod(m, m.GetLatestVersion()));
+                else
+                    this.AvailableMods.Add(new MiniMod(m));
+            }*/
+        }
+
+        //Profile Functionality
+        public Profile CurrentProfile { get { return this.Profiles[this._currentProfID]; } }
+        public bool ChangeProfile(string id)
+        {
+            if (!this.Profiles.ContainsKey(id))
+                return false;
+            this._currentProfID = id;
+            return true;
         }
     }
     public class RuleSet
@@ -818,6 +933,8 @@ namespace RiskOfDeath_ModManager
             return t;
         }
     }
+
+    //NEEDS CHANGE
     public class InstalledMod
     {
         public string Name { get; private set; }
@@ -856,11 +973,18 @@ namespace RiskOfDeath_ModManager
         }
     }
 
+    //deprecated
     class MappedInstalledMod
     {
         [JsonProperty("version_number")]
         public string VersionNumber { get; set; }
         [JsonProperty("files")]
         public string[] Files { get; set; }
+    }
+
+    class MappedModFiles
+    {
+        [JsonProperty("files")]
+        public Dictionary<string, string> Files { get; set; } = new Dictionary<string, string>();
     }
 }

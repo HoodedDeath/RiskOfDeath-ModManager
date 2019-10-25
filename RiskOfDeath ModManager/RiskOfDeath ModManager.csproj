@@ -112,6 +112,7 @@
     <Compile Include="PickForm.Designer.cs">
       <DependentUpon>PickForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="Profile.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Version.cs" />
@@ -174,6 +175,13 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="logo.ico" />
+    <None Include="Resources\rodmm_logo.png" />
+    <None Include="Resources\menu_btn.png" />
+    <None Include="Resources\load_profile.png" />
+    <None Include="Resources\launch_btn.png" />
+    <None Include="Resources\exit_btn.png" />
+    <None Include="Resources\delete_btn.png" />
+    <None Include="Resources\add_btn.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -1,0 +1,49 @@
+ModContainer.installedmods -type-> Dictionary<string (Mod.LongName), Dictionary<string (VerisonNumber), MappedMod (local/external files)>>
+
+
+{
+  "bbepis-BepInExPack": {
+    "2.0.0": {
+      "local_files": [
+        "\\bbepis-BepInExPack-2.0.0\\BepInExPack\\doorstop_config.ini",
+        "\\bbepis-BepInExPack-2.0.0\\BepInExPack\\winhttp.dll"
+      ],
+      "external_files": [
+        "E:\\\\SteamLibrary\\steamapps\\common\\Risk of Rain 2\\doorstop_config.ini",
+        "E:\\\\SteamLibrary\\steamapps\\common\\Risk of Rain 2\\winhttp.dll"
+      ]
+    },
+    "1.0.0": {
+      "local_files": [
+        "\\bbepis-BepInExPack-2.0.0\\BepInExPack\\doorstop_config.ini",
+        "\\bbepis-BepInExPack-2.0.0\\BepInExPack\\winhttp.dll"
+      ],
+      "external_files": [
+        "E:\\\\SteamLibrary\\steamapps\\common\\Risk of Rain 2\\doorstop_config.ini",
+        "E:\\\\SteamLibrary\\steamapps\\common\\Risk of Rain 2\\winhttp.dll"
+      ]
+    }
+  },
+  "tristanmcpherson-R2API": {
+    "2.1.16": {
+      "local_files": [
+        "tristanmcpherson-R2API-2.1.16\\...",
+        "tristanmcpherson-R2API-2.1.16\\..."
+      ],
+      "external_files": [
+        "E:\\\\SteamLibrary\\steamapps\\common\\Risk of Rain 2\\BepInEx\\monomod\\Assembly-CSharp.R2API.mm.dll",
+        "E:\\\\SteamLibrary\\steamapps\\common\\Risk of Rain 2\\BepInEx\\plugins\\tristanmcpherson-R2API-2.1.16\\R2API\\MMHOOK_Assembly-CSharp.dll"
+      ]
+    },
+    "2.1.0": {
+      "local_files": [
+        "tristanmcpherson-R2API-2.1.16\\...",
+        "tristanmcpherson-R2API-2.1.16\\..."
+      ],
+      "external_files": [
+        "E:\\\\SteamLibrary\\steamapps\\common\\Risk of Rain 2\\BepInEx\\monomod\\Assembly-CSharp.R2API.mm.dll",
+        "E:\\\\SteamLibrary\\steamapps\\common\\Risk of Rain 2\\BepInEx\\plugins\\tristanmcpherson-R2API-2.1.16\\R2API\\MMHOOK_Assembly-CSharp.dll"
+      ]
+    }
+  }
+}
