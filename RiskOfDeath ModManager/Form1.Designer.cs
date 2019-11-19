@@ -35,6 +35,9 @@
             this.label2 = new System.Windows.Forms.Label();
             this.protocolBackgroundWorker = new System.ComponentModel.BackgroundWorker();
             this.sideDockPanel = new System.Windows.Forms.Panel();
+            this.launchPicBox = new System.Windows.Forms.PictureBox();
+            this.exitPicBox = new System.Windows.Forms.PictureBox();
+            this.panelPicBox = new System.Windows.Forms.PictureBox();
             this.topDockPanel = new System.Windows.Forms.Panel();
             this.profEditBtn = new System.Windows.Forms.Button();
             this.profNumModsLabel = new System.Windows.Forms.Label();
@@ -42,28 +45,25 @@
             this.profNameLabel = new System.Windows.Forms.Label();
             this.label5 = new System.Windows.Forms.Label();
             this.sidePanel = new System.Windows.Forms.Panel();
+            this.logoPicBox = new System.Windows.Forms.PictureBox();
+            this.addProfPicBox = new System.Windows.Forms.PictureBox();
             this.profsPanelInPanel = new System.Windows.Forms.Panel();
+            this.panelPicBoxInPanel = new System.Windows.Forms.PictureBox();
             this.rulesBtn = new System.Windows.Forms.Button();
             this.urlBtn = new System.Windows.Forms.Button();
             this.launchBtn = new System.Windows.Forms.Button();
             this.helpBtn = new System.Windows.Forms.Button();
             this.exitBtn = new System.Windows.Forms.Button();
             this.panelBGWorker = new System.ComponentModel.BackgroundWorker();
-            this.logoPicBox = new System.Windows.Forms.PictureBox();
-            this.addProfPicBox = new System.Windows.Forms.PictureBox();
-            this.panelPicBoxInPanel = new System.Windows.Forms.PictureBox();
-            this.launchPicBox = new System.Windows.Forms.PictureBox();
-            this.exitPicBox = new System.Windows.Forms.PictureBox();
-            this.panelPicBox = new System.Windows.Forms.PictureBox();
             this.sideDockPanel.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.launchPicBox)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.exitPicBox)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.panelPicBox)).BeginInit();
             this.topDockPanel.SuspendLayout();
             this.sidePanel.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.logoPicBox)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.addProfPicBox)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.panelPicBoxInPanel)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.launchPicBox)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.exitPicBox)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.panelPicBox)).BeginInit();
             this.SuspendLayout();
             // 
             // availablePanel
@@ -124,6 +124,42 @@
             this.sideDockPanel.Size = new System.Drawing.Size(56, 487);
             this.sideDockPanel.TabIndex = 10;
             // 
+            // launchPicBox
+            // 
+            this.launchPicBox.BackColor = System.Drawing.Color.Transparent;
+            this.launchPicBox.BackgroundImage = global::RiskOfDeath_ModManager.Properties.Resources.launch_btn;
+            this.launchPicBox.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom;
+            this.launchPicBox.Location = new System.Drawing.Point(3, 378);
+            this.launchPicBox.Name = "launchPicBox";
+            this.launchPicBox.Size = new System.Drawing.Size(50, 50);
+            this.launchPicBox.TabIndex = 13;
+            this.launchPicBox.TabStop = false;
+            this.launchPicBox.MouseDown += new System.Windows.Forms.MouseEventHandler(this.Launch_MouseDown);
+            // 
+            // exitPicBox
+            // 
+            this.exitPicBox.BackColor = System.Drawing.Color.Transparent;
+            this.exitPicBox.BackgroundImage = global::RiskOfDeath_ModManager.Properties.Resources.exit_btn;
+            this.exitPicBox.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom;
+            this.exitPicBox.Location = new System.Drawing.Point(3, 434);
+            this.exitPicBox.Name = "exitPicBox";
+            this.exitPicBox.Size = new System.Drawing.Size(50, 50);
+            this.exitPicBox.TabIndex = 12;
+            this.exitPicBox.TabStop = false;
+            this.exitPicBox.Click += new System.EventHandler(this.Exit_Click);
+            // 
+            // panelPicBox
+            // 
+            this.panelPicBox.BackColor = System.Drawing.Color.Transparent;
+            this.panelPicBox.BackgroundImage = global::RiskOfDeath_ModManager.Properties.Resources.menu_btn;
+            this.panelPicBox.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom;
+            this.panelPicBox.Location = new System.Drawing.Point(3, 3);
+            this.panelPicBox.Name = "panelPicBox";
+            this.panelPicBox.Size = new System.Drawing.Size(50, 50);
+            this.panelPicBox.TabIndex = 11;
+            this.panelPicBox.TabStop = false;
+            this.panelPicBox.Click += new System.EventHandler(this.PanelBtns_Click);
+            // 
             // topDockPanel
             // 
             this.topDockPanel.BackColor = System.Drawing.SystemColors.ActiveBorder;
@@ -147,6 +183,7 @@
             this.profEditBtn.TabIndex = 4;
             this.profEditBtn.Text = "Edit Profile";
             this.profEditBtn.UseVisualStyleBackColor = true;
+            this.profEditBtn.Click += new System.EventHandler(this.EditProfile_Click);
             // 
             // profNumModsLabel
             // 
@@ -201,6 +238,30 @@
             this.sidePanel.Size = new System.Drawing.Size(332, 487);
             this.sidePanel.TabIndex = 12;
             // 
+            // logoPicBox
+            // 
+            this.logoPicBox.BackColor = System.Drawing.Color.Transparent;
+            this.logoPicBox.BackgroundImage = global::RiskOfDeath_ModManager.Properties.Resources.rodmm_logo;
+            this.logoPicBox.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom;
+            this.logoPicBox.Location = new System.Drawing.Point(3, 115);
+            this.logoPicBox.Name = "logoPicBox";
+            this.logoPicBox.Size = new System.Drawing.Size(50, 225);
+            this.logoPicBox.TabIndex = 4;
+            this.logoPicBox.TabStop = false;
+            // 
+            // addProfPicBox
+            // 
+            this.addProfPicBox.BackColor = System.Drawing.Color.Transparent;
+            this.addProfPicBox.BackgroundImage = global::RiskOfDeath_ModManager.Properties.Resources.add_btn;
+            this.addProfPicBox.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom;
+            this.addProfPicBox.Cursor = System.Windows.Forms.Cursors.Default;
+            this.addProfPicBox.Location = new System.Drawing.Point(3, 59);
+            this.addProfPicBox.Name = "addProfPicBox";
+            this.addProfPicBox.Size = new System.Drawing.Size(50, 50);
+            this.addProfPicBox.TabIndex = 10;
+            this.addProfPicBox.TabStop = false;
+            this.addProfPicBox.Click += new System.EventHandler(this.AddProfile_Click);
+            // 
             // profsPanelInPanel
             // 
             this.profsPanelInPanel.AutoScroll = true;
@@ -208,6 +269,19 @@
             this.profsPanelInPanel.Name = "profsPanelInPanel";
             this.profsPanelInPanel.Size = new System.Drawing.Size(270, 363);
             this.profsPanelInPanel.TabIndex = 9;
+            // 
+            // panelPicBoxInPanel
+            // 
+            this.panelPicBoxInPanel.BackColor = System.Drawing.Color.Transparent;
+            this.panelPicBoxInPanel.BackgroundImage = global::RiskOfDeath_ModManager.Properties.Resources.menu_btn;
+            this.panelPicBoxInPanel.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom;
+            this.panelPicBoxInPanel.Cursor = System.Windows.Forms.Cursors.Default;
+            this.panelPicBoxInPanel.Location = new System.Drawing.Point(3, 3);
+            this.panelPicBoxInPanel.Name = "panelPicBoxInPanel";
+            this.panelPicBoxInPanel.Size = new System.Drawing.Size(50, 50);
+            this.panelPicBoxInPanel.TabIndex = 6;
+            this.panelPicBoxInPanel.TabStop = false;
+            this.panelPicBoxInPanel.Click += new System.EventHandler(this.PanelBtns_Click);
             // 
             // rulesBtn
             // 
@@ -243,7 +317,7 @@
             this.launchBtn.TabIndex = 7;
             this.launchBtn.Text = "Launch RoR2";
             this.launchBtn.UseVisualStyleBackColor = false;
-            this.launchBtn.Click += new System.EventHandler(this.Launch_Click);
+            this.launchBtn.MouseDown += new System.Windows.Forms.MouseEventHandler(this.Launch_MouseDown);
             // 
             // helpBtn
             // 
@@ -276,86 +350,13 @@
             this.panelBGWorker.ProgressChanged += new System.ComponentModel.ProgressChangedEventHandler(this.PanelBGWorker_ProgressChanged);
             this.panelBGWorker.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.PanelBGWorker_WorkDone);
             // 
-            // logoPicBox
-            // 
-            this.logoPicBox.BackColor = System.Drawing.Color.Transparent;
-            this.logoPicBox.BackgroundImage = global::RiskOfDeath_ModManager.Properties.Resources.rodmm_logo;
-            this.logoPicBox.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom;
-            this.logoPicBox.Location = new System.Drawing.Point(3, 115);
-            this.logoPicBox.Name = "logoPicBox";
-            this.logoPicBox.Size = new System.Drawing.Size(50, 225);
-            this.logoPicBox.TabIndex = 4;
-            this.logoPicBox.TabStop = false;
-            // 
-            // addProfPicBox
-            // 
-            this.addProfPicBox.BackColor = System.Drawing.Color.Transparent;
-            this.addProfPicBox.BackgroundImage = global::RiskOfDeath_ModManager.Properties.Resources.add_btn;
-            this.addProfPicBox.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom;
-            this.addProfPicBox.Cursor = System.Windows.Forms.Cursors.Default;
-            this.addProfPicBox.Location = new System.Drawing.Point(3, 59);
-            this.addProfPicBox.Name = "addProfPicBox";
-            this.addProfPicBox.Size = new System.Drawing.Size(50, 50);
-            this.addProfPicBox.TabIndex = 10;
-            this.addProfPicBox.TabStop = false;
-            this.addProfPicBox.Click += new System.EventHandler(this.AddProfile_Click);
-            // 
-            // panelPicBoxInPanel
-            // 
-            this.panelPicBoxInPanel.BackColor = System.Drawing.Color.Transparent;
-            this.panelPicBoxInPanel.BackgroundImage = global::RiskOfDeath_ModManager.Properties.Resources.menu_btn;
-            this.panelPicBoxInPanel.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom;
-            this.panelPicBoxInPanel.Cursor = System.Windows.Forms.Cursors.Default;
-            this.panelPicBoxInPanel.Location = new System.Drawing.Point(3, 3);
-            this.panelPicBoxInPanel.Name = "panelPicBoxInPanel";
-            this.panelPicBoxInPanel.Size = new System.Drawing.Size(50, 50);
-            this.panelPicBoxInPanel.TabIndex = 6;
-            this.panelPicBoxInPanel.TabStop = false;
-            this.panelPicBoxInPanel.Click += new System.EventHandler(this.PanelBtns_Click);
-            // 
-            // launchPicBox
-            // 
-            this.launchPicBox.BackColor = System.Drawing.Color.Transparent;
-            this.launchPicBox.BackgroundImage = global::RiskOfDeath_ModManager.Properties.Resources.launch_btn;
-            this.launchPicBox.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom;
-            this.launchPicBox.Location = new System.Drawing.Point(3, 378);
-            this.launchPicBox.Name = "launchPicBox";
-            this.launchPicBox.Size = new System.Drawing.Size(50, 50);
-            this.launchPicBox.TabIndex = 13;
-            this.launchPicBox.TabStop = false;
-            this.launchPicBox.Click += new System.EventHandler(this.Launch_Click);
-            // 
-            // exitPicBox
-            // 
-            this.exitPicBox.BackColor = System.Drawing.Color.Transparent;
-            this.exitPicBox.BackgroundImage = global::RiskOfDeath_ModManager.Properties.Resources.exit_btn;
-            this.exitPicBox.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom;
-            this.exitPicBox.Location = new System.Drawing.Point(3, 434);
-            this.exitPicBox.Name = "exitPicBox";
-            this.exitPicBox.Size = new System.Drawing.Size(50, 50);
-            this.exitPicBox.TabIndex = 12;
-            this.exitPicBox.TabStop = false;
-            this.exitPicBox.Click += new System.EventHandler(this.Exit_Click);
-            // 
-            // panelPicBox
-            // 
-            this.panelPicBox.BackColor = System.Drawing.Color.Transparent;
-            this.panelPicBox.BackgroundImage = global::RiskOfDeath_ModManager.Properties.Resources.menu_btn;
-            this.panelPicBox.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom;
-            this.panelPicBox.Location = new System.Drawing.Point(3, 3);
-            this.panelPicBox.Name = "panelPicBox";
-            this.panelPicBox.Size = new System.Drawing.Size(50, 50);
-            this.panelPicBox.TabIndex = 11;
-            this.panelPicBox.TabStop = false;
-            this.panelPicBox.Click += new System.EventHandler(this.PanelBtns_Click);
-            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.SystemColors.Control;
             this.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom;
-            this.ClientSize = new System.Drawing.Size(1137, 487);
+            this.ClientSize = new System.Drawing.Size(754, 487);
             this.Controls.Add(this.sidePanel);
             this.Controls.Add(this.topDockPanel);
             this.Controls.Add(this.sideDockPanel);
@@ -363,20 +364,23 @@
             this.Controls.Add(this.activePanel);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.availablePanel);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
+            this.MaximizeBox = false;
             this.Name = "Form1";
+            this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Hide;
             this.Text = "Risk of Death Mod Manager";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_Closing);
             this.sideDockPanel.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.launchPicBox)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.exitPicBox)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.panelPicBox)).EndInit();
             this.topDockPanel.ResumeLayout(false);
             this.topDockPanel.PerformLayout();
             this.sidePanel.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.logoPicBox)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.addProfPicBox)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.panelPicBoxInPanel)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.launchPicBox)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.exitPicBox)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.panelPicBox)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 

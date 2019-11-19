@@ -42,7 +42,7 @@ namespace RiskOfDeath_ModManager
 
         public const string THIS_UUID = "ab3e2616-672f-4791-91a9-a09647d7f26d";
         public Mod THIS_MOD { get; private set; }
-        public readonly string THIS_VN = "2.2.1"; // NEEDS CHANGE
+        public readonly string THIS_VN = "3.0.0";
         public RuleSet Rules { get; private set; }
         //private Dictionary<string, MappedInstalledMod> installedmods = new Dictionary<string, MappedInstalledMod>(); //TO BE CHANGED TO TYPE OF Dictionary<string(Mod.LongName), Dictionary<string(VersionNumber), MappedModFiles>>
         private readonly string ror2;
@@ -111,7 +111,8 @@ namespace RiskOfDeath_ModManager
             catch (FileNotFoundException)
             {
                 Console.WriteLine("Profiles file does not exist. Creating blank profile as default.");
-                this.Profiles.Add("0", new Profile() { Name = "Default Profile", Mods = new List<string>() });
+                AddNewProfile("Default Profile", new List<string>());
+                //this.Profiles.Add("0", new Profile() { Name = "Default Profile", Mods = new List<string>() });
             }
             catch (Exception e) { Console.WriteLine("Caught Exception while reading profiles file:\n{0}{1}", e.Message, e.StackTrace); }
 
@@ -636,6 +637,7 @@ namespace RiskOfDeath_ModManager
             this.installedmods[v.ParentMod.LongName][v.VersionNumber.ToString()] = map;
             //
             this.Profiles[this._currentProfID].Mods.Add(dependencyString);
+            SaveProfiles();
             //
 
             if (File.Exists(INST_PATH))
@@ -725,7 +727,49 @@ namespace RiskOfDeath_ModManager
             CleanDependenies(v.Dependencies.ToArray());*/
         }
 
-        //POSSIBLY NEEDS CHANGED OR DEPRECATION
+        public void InstallMods()
+        {
+            Dictionary<string, string> modsDict = new Dictionary<string, string>();
+            foreach (string mod in this.Profiles[this._currentProfID].Mods)
+            {
+                Version v = FindMod(mod);
+                if (!modsDict.ContainsKey(v.ParentMod.LongName))
+                    modsDict[v.ParentMod.LongName] = v.VersionNumber.ToString();
+                else if (v.VersionNumber.IsNewer(modsDict[v.ParentMod.LongName]))
+                    modsDict[v.ParentMod.LongName] = v.VersionNumber.ToString();
+            }
+            Console.WriteLine("Mods cleaned up.\nInstalling mods ...");
+            List<string> mlist = new List<string>();
+            foreach (KeyValuePair<string, string> kvp in modsDict)
+            {
+                mlist.Add(kvp.Key + "-" + kvp.Value);
+                try
+                {
+                    foreach (KeyValuePair<string, string> files in this.installedmods[kvp.Key][kvp.Value].Files)
+                    {
+                        Console.WriteLine("Copying '{0}' to '{1}' ...", kvp.Key, kvp.Value);
+                        VerifyPathToFile(files.Value);
+                        File.Copy(files.Key, files.Value, true);
+                    }
+                }
+                catch (Exception e) { Console.WriteLine("Failed to install {0} version {1}.\n{2} {3}", kvp.Key, kvp.Value, e.Message, e.StackTrace); }
+            }
+            this.Profiles[this._currentProfID].Mods = mlist;
+            Console.WriteLine("Finished installing.");
+        }
+        public void UninstallMods()
+        {
+            foreach (string mod in this.Profiles[this._currentProfID].Mods)
+            {
+                Version v = FindMod(mod);
+                foreach (string file in this.installedmods[v.ParentMod.LongName][v.VersionNumber.ToString()].Files.Values)
+                    try { File.Delete(file); }
+                    catch (Exception e) { Console.WriteLine("Failed to delete file {0} belonging to mod {1} version {2}.\n{3} {4}", file, v.ParentMod.LongName, v.VersionNumber.ToString(), e.Message, e.StackTrace); }
+            }
+            Console.WriteLine("Finished uninstalling.");
+        }
+
+        //NEEDS CHANGED OR DEPRECATION
         private void CleanDependenies(params string[] dependencies)
         {
             foreach (string test in dependencies)
@@ -766,9 +810,9 @@ namespace RiskOfDeath_ModManager
             Uninstall(dependencyString);
             Download(FindMod(dependencyString).ParentMod.GetLatestVersion().DependencyString);
         }
-        /*private void VerifyPathToFile(string path)
+        private void VerifyPathToFile(string path)
         {
-            return;
+            //return;
             if (path == null || path.Trim() == "")
                 throw new ArgumentException("Path input for VerifyPathToFile cannot be null or empty");
             path = path.Trim();
@@ -780,7 +824,7 @@ namespace RiskOfDeath_ModManager
                 if (!Directory.Exists(s))
                     Directory.CreateDirectory(s);
             }
-        }*/
+        }
 
         // NEEDS CHANGE
         public void UpdateModLists()
@@ -823,6 +867,57 @@ namespace RiskOfDeath_ModManager
                 return false;
             this._currentProfID = id;
             return true;
+        }
+        public void AddNewProfile(string name, List<string> mods)
+        {
+            Profile p = new Profile() { Name = name };
+            foreach (string s in mods)
+            {
+                if (FindMod(s) == null)
+                {
+                    Console.WriteLine("Could not find mod '{0}'. Mod will not be added to new profile '{1}'.", s, name);
+                    continue;
+                }
+                Download(s);
+                p.Mods.Add(s);
+            }
+            for (int i = 0; ; i++)
+            {
+                if (!this.Profiles.ContainsKey(i.ToString()))
+                {
+                    this.Profiles.Add(i.ToString(), p);
+                    SaveProfiles();
+                    break;
+                }
+            }
+        }
+        public void EditCurrentProfile(string name)
+        {
+            this.Profiles[this._currentProfID].Name = name;
+            SaveProfiles();
+        }
+        public void DeleteCurrentProfile()
+        {
+            this.Profiles.Remove(this._currentProfID);
+            SaveProfiles();
+            this._currentProfID = this.Profiles.Keys.First();
+        }
+        public void DeleteProfile(string id)
+        {
+            this.Profiles.Remove(id);
+            SaveProfiles();
+            if (this._currentProfID == id)
+                this._currentProfID = this.Profiles.Keys.First();
+        }
+        private void SaveProfiles()
+        {
+            if (File.Exists(PROF_PATH))
+                File.Delete(PROF_PATH);
+            StreamWriter sw = new StreamWriter(File.Open(PROF_PATH, FileMode.OpenOrCreate));
+            sw.WriteLine(JsonConvert.SerializeObject(this.Profiles, Formatting.Indented));
+            sw.Flush();
+            sw.Close();
+            sw.Dispose();
         }
     }
     public class RuleSet

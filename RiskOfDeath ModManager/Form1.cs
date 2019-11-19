@@ -32,6 +32,8 @@ namespace RiskOfDeath_ModManager
             else
                 this._ror2Path = ror2Path;
             InitializeComponent();
+            this.sidePanel.BringToFront();
+            this.sidePanel.Location = new Point(-334, 0);
             this._mods = LoadPackages();
             string p = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "uritemp");
             if (startWithDownload && File.Exists(p))
@@ -74,6 +76,9 @@ namespace RiskOfDeath_ModManager
                 this.launchBtn.Enabled = false;
                 this.launchBtn.Visible = false;
             }
+            //Display profiles
+            UpdateProfiles();
+            //
             protocolBackgroundWorker.RunWorkerAsync();
         }
         private void Form1_Closing(object sender, FormClosingEventArgs e)
@@ -223,7 +228,7 @@ namespace RiskOfDeath_ModManager
             for (int i = 0; i < 338; i++)
             {
                 worker.ReportProgress(panel_is_out ? panel_loc - i : panel_loc + i);
-                Thread.Sleep(l == 0 ? 1 : 0);
+                Thread.Sleep(l == 0 && false ? 1 : 0);
                 l = (l + 1) % 5;
             }
             panel_is_out = !panel_is_out;
@@ -239,6 +244,7 @@ namespace RiskOfDeath_ModManager
                 MessageBox.Show(e.Error.Message + e.Error.StackTrace);
             sidePanel.Controls.AddRange(panel_controls.ToArray());
             panel_controls.Clear();
+            availablePanel.Show();
         }
         private void PanelBtns_Click(object sender, EventArgs e)
         {
@@ -248,10 +254,24 @@ namespace RiskOfDeath_ModManager
                 foreach (Control c in sidePanel.Controls)
                     panel_controls.Add(c);
                 sidePanel.Controls.Clear();
+                availablePanel.Hide();
                 panelBGWorker.RunWorkerAsync();
             }
         }
         //Side Panel Functionality
+        private void UpdateProfiles()
+        {
+            ListProfiles();
+            UpdateProfileDetails();
+        }
+        private void ListProfiles()
+        {
+            int[] loc = new int[] { 3, -76 };
+            profsPanelInPanel.Controls.Clear();
+            profsPanelInPanel.AutoScrollPosition = new Point(0, 0);
+            foreach (KeyValuePair<string, Profile> kvp in this._mods.Profiles)
+                profsPanelInPanel.Controls.Add(new ProfileGrouping(this, kvp.Value, kvp.Key) { Location = new Point(loc[0], loc[1] += 79) });
+        }
         private void AddUpdateBtn()
         {
             this.profsPanelInPanel.Size = new Size(profsPanelInPanel.Width, profsPanelInPanel.Height - 26);
@@ -282,9 +302,48 @@ namespace RiskOfDeath_ModManager
             Application.Exit();
             throw new CloseEverythingException();
         }
-        private void Launch_Click(object sender, EventArgs e)
+        /*private void Launch_Click(object sender, EventArgs e)
         {
             Process.Start("explorer.exe", "steam://rungameid/632360");
+        }*/
+        private void Launch_MouseDown(object sender, MouseEventArgs e)
+        {
+            switch (e.Button)
+            {
+                case MouseButtons.Left:
+                    this._mods.InstallMods();
+                    Console.WriteLine("Launching RoR2 ...");
+                    Process.Start("explorer.exe", "steam://rungameid/632360");
+                    Thread.Sleep(30000);
+                    Console.WriteLine("Awaiting RoR2 exit to uninstall mods ...");
+                    while (true)
+                    {
+                        int i = (int)Registry.GetValue("HKEY_CURRENT_USER\\Software\\Valve\\Steam", "RunningAppID", -1);
+                        if (i != 632360)
+                            break;
+                        Thread.Sleep(5000);
+                    }
+                    Console.WriteLine("RoR2 no longer running, uninstalling mods ...");
+                    this._mods.UninstallMods();
+                    break;
+                case MouseButtons.Right:
+                    ContextMenu menu = new ContextMenu();
+                    menu.MenuItems.Add("Install mods without launch", new EventHandler(this.LaunchRMB_Install));
+                    menu.MenuItems.Add("Uninstall mods", new EventHandler(this.LaunchRMB_Uninstall));
+                    menu.Show(this, new Point(e.X, e.Y));
+                    //MessageBox.Show("Launch RightClick");
+                    break;
+            }
+        }
+        private void LaunchRMB_Install(object sender, EventArgs e)
+        {
+            this._mods.InstallMods();
+            MessageBox.Show("Mod profile installed. Use the uninstall button in the context menu to uninstall later.");
+        }
+        private void LaunchRMB_Uninstall(object sender, EventArgs e)
+        {
+            this._mods.UninstallMods();
+            MessageBox.Show("Mod profile uninstalled.");
         }
         private void Exit_Click(object sender, EventArgs e)
         {
@@ -337,6 +396,59 @@ namespace RiskOfDeath_ModManager
         private void AddProfile_Click(object sender, EventArgs e)
         {
             MessageBox.Show("AddProfileBtn");
+            using (EditProfileForm form = new EditProfileForm())
+            {
+                DialogResult res = form.ShowDialog();
+                if (res == DialogResult.OK)
+                {
+                    this._mods.AddNewProfile(form.ProfName, form.Mods);
+                    UpdateProfiles();
+                }
+                else if (res != DialogResult.Cancel)
+                    Console.WriteLine("+\n+\n+\nidk wtf just happened, EditProfileForm in add mode should only return DialogResult of OK, or Cancel\n+\n+\n+");
+            }
+        }
+        private void EditProfile_Click(object sender, EventArgs e)
+        {
+            MessageBox.Show("EditProfileBtn");
+            using (EditProfileForm form = new EditProfileForm(this._mods.CurrentProfile.Name, this._mods.CurrentProfile.Mods))
+            {
+                DialogResult res = form.ShowDialog();
+                if (res == DialogResult.OK)
+                {
+                    this._mods.EditCurrentProfile(form.ProfName);
+                    UpdateProfiles();
+                }
+                else if (res == DialogResult.Abort)
+                {
+                    this._mods.DeleteCurrentProfile();
+                    UpdateProfiles();
+                }
+                else if (res != DialogResult.Cancel)
+                    Console.WriteLine("+\n+\n+\nidk wtf just happen, EditProfileForm in edit mode should only return a DialogResult of Ok, Abort, or Cancel\n+\n+\n+");
+            }
+        }
+        public void DeleteProfile(ProfileGrouping g)
+        {
+            this._mods.DeleteProfile(g.ID);
+            UpdateProfiles();
+        }
+        public void SetProfile(ProfileGrouping g, bool fromPanel)
+        {
+            if (this._mods.ChangeProfile(g.ID))
+            {
+                UpdateProfileDetails();
+                if (fromPanel)
+                    PanelBtns_Click(null, null);
+            }
+            else
+                MessageBox.Show(string.Format("An error occured while trying to change profile. Profile details:\nID: '{0}'\nName: '{1}'\nMods: {2}", g.ID, g.Name, Helper.ArrToStr(g.Mods)));
+        }
+        private void UpdateProfileDetails()
+        {
+            Profile p = this._mods.CurrentProfile;
+            this.profNameLabel.Text = p.Name;
+            this.profNumModsLabel.Text = p.Mods.Count.ToString();
         }
         //
     }
@@ -660,6 +772,161 @@ namespace RiskOfDeath_ModManager
         public StringEventArgs(string s) : base()
         {
             MSG = s;
+        }
+    }
+    public class ProfileGrouping : GroupBox
+    {
+        private Label numModsLabel;
+        private Label label1;
+        private PictureBox deletePicBox;
+        private PictureBox loadPicBox;
+        private readonly Form1 parent;
+        public string ID { get; private set; } = "#NO_ID#";
+
+        /*public ProfileGrouping(Form1 parent)
+        {
+            InitializeComponent();
+            this.parent = parent;
+            UpdateModLabel();
+        }
+        public ProfileGrouping(Form1 parent, string name)
+        {
+            InitializeComponent();
+            this.parent = parent;
+            this.Text = name;
+            UpdateModLabel();
+        }
+        public ProfileGrouping(Form1 parent, string name, params string[] mods)
+        {
+            InitializeComponent();
+            this.parent = parent;
+            this.Text = name;
+            //this.Mods = new List<string>(mods);
+            AddMods(mods);
+            //UpdateModLabel();
+        }
+        public ProfileGrouping(Form1 parent, string id, string name, List<string> mods)
+        {
+            InitializeComponent();
+            this.parent = parent;
+            this.Text = name;
+            AddMods(mods);
+            this.ID = id;
+        }*/
+        public ProfileGrouping(Form1 parent, Profile profile, string id)
+        {
+            InitializeComponent();
+            this.parent = parent;
+            this.Text = profile.Name;
+            AddMods(profile.Mods);
+            this.ID = id;
+        }
+        private void InitializeComponent()
+        {
+            this.SuspendLayout();
+            numModsLabel = new Label();
+            label1 = new Label();
+            loadPicBox = new PictureBox();
+            deletePicBox = new PictureBox();
+            // deletePicBox
+            this.deletePicBox.BackColor = Color.Transparent;
+            this.deletePicBox.BackgroundImage = Properties.Resources.delete_btn;
+            this.deletePicBox.BackgroundImageLayout = ImageLayout.Zoom;
+            this.deletePicBox.Location = new Point(134, 16);
+            this.deletePicBox.Name = "deletePicBox";
+            this.deletePicBox.Size = new Size(50, 50);
+            this.deletePicBox.TabIndex = 6;
+            this.deletePicBox.TabStop = false;
+            this.deletePicBox.Click += new EventHandler(DeleteMe);
+            // loadPicBox
+            this.loadPicBox.BackColor = Color.Transparent;
+            this.loadPicBox.BackgroundImage = Properties.Resources.load_profile;
+            this.loadPicBox.BackgroundImageLayout = ImageLayout.Zoom;
+            this.loadPicBox.Location = new Point(190, 16);
+            this.loadPicBox.Name = "loadPicBox";
+            this.loadPicBox.Size = new Size(50, 50);
+            this.loadPicBox.TabIndex = 5;
+            this.loadPicBox.TabStop = false;
+            this.loadPicBox.Click += new EventHandler(LoadMe);
+            // label1
+            this.label1.AutoSize = true;
+            this.label1.Font = new Font("Microsoft Sans Serif", 12F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            this.label1.Location = new Point(16, 21);
+            this.label1.Name = "label1";
+            this.label1.Size = new Size(79, 20);
+            this.label1.TabIndex = 5;
+            this.label1.Text = "# of Mods";
+            // numModsLabel
+            this.numModsLabel.AutoSize = true;
+            this.numModsLabel.Font = new Font("Microsoft Sans Serif", 12F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            this.numModsLabel.Location = new Point(16, 41);
+            this.numModsLabel.Name = "numModsLabel";
+            this.numModsLabel.Size = new Size(27, 20);
+            this.numModsLabel.TabIndex = 5;
+            this.numModsLabel.Text = "##";
+            // groupBox
+            this.Font = new Font("Microsoft Sans Serif", 12F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            this.BackColor = SystemColors.ActiveBorder;
+            this.Controls.Add(this.deletePicBox);
+            this.Controls.Add(this.loadPicBox);
+            this.Controls.Add(this.numModsLabel);
+            this.Controls.Add(this.label1);
+            this.Location = new Point(622, 130);
+            this.Name = "groupBox1";
+            this.Size = new Size(246, 73);
+            this.TabIndex = 4;
+            this.TabStop = false;
+            this.Text = "#PROFILE_NAME#";
+            //
+            this.ResumeLayout(false);
+            this.PerformLayout();
+        }
+
+        public List<string> Mods { get; private set; } = new List<string>();
+        public void RemoveMod(string dependencyString)
+        {
+            this.Mods.Remove(dependencyString);
+            UpdateModLabel();
+        }
+        public void AddMod(string dependencyString)
+        {
+            if (!this.Mods.Contains(dependencyString))
+                this.Mods.Add(dependencyString);
+            UpdateModLabel();
+        }
+        public void AddMods(params string[] deps)
+        {
+            foreach (string s in deps)
+                if (!this.Mods.Contains(s))
+                    this.Mods.Add(s);
+            UpdateModLabel();
+        }
+        public void AddMods(List<string> deps)
+        {
+            foreach (string s in deps)
+                if (!this.Mods.Contains(s))
+                    this.Mods.Add(s);
+            UpdateModLabel();
+        }
+        private void UpdateModLabel()
+        {
+            this.numModsLabel.Text = this.Mods.Count.ToString();
+        }
+
+        private void LoadMe(object sender, EventArgs e)
+        {
+            this.parent.SetProfile(this, true);
+        }
+        private void DeleteMe(object sender, EventArgs e)
+        {
+            this.parent.DeleteProfile(this);
+        }
+
+        private string _text = "";
+        public new string Text
+        {
+            get { return _text; }
+            set { _text = value; base.Text = Helper.Truncate(value, 19); }
         }
     }
 }
